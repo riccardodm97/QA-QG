@@ -20,7 +20,7 @@ class Dataset:
 
             self.df =  self._json_to_dataframe(self.dataset_path)
 
-        else : raise 'The dataset path is empty'
+        else : raise Exception('The dataset path is empty') 
 
     
     def _json_to_dataframe(self,from_path):
@@ -45,16 +45,24 @@ class Dataset:
             df = pd.json_normalize(json_file, self.JSON_RECORD[:-1],meta=[["data", "title"],['data','paragraph','context']])
             if "answers" in df.columns:
                 df = df.drop("answers", axis="columns")
+            self.has_labels = False
         else:
             df = pd.json_normalize(json_file , self.JSON_RECORD ,meta=[["data", "title"],['data','paragraph','context'],['data','paragraph','qas','question'],['data','paragraph','qas','id']])
             df.rename(columns={"text": "answer","data.paragraph.qas.question":"question","data.paragraph.qas.id":"id"}, inplace=True)
             df['answer_end'] = df.answer_start + df.answer.apply(len)
+            self.has_labels = True
+
         
         df["context_id"] = df["data.paragraph.context"].factorize()[0]
 
         df.rename(columns={"data.title": "title", "id":"question_id","data.paragraph.context":"context"}, inplace=True)
 
         df.reset_index(drop=True,inplace=True)
+
+        # Reorder columns to be more pleaseant 
+        columns=['title','context','context_id','question','question_id']
+        not_pres = [col for col in df.columns if col not in columns]
+        df = df[columns+not_pres]
 
         df.to_pickle(dataframe_path)
 
