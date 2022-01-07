@@ -1,5 +1,6 @@
 - encode dataset into dataframe 
 - create custom classes for handling data 
+- ispezionare dev_set e modificare data_handling 
 
 
 eliminare (?) data da gitignore 
