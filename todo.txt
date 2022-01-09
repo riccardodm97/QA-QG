@@ -4,3 +4,15 @@
 
 
 eliminare (?) data da gitignore 
+
+
+datamanager che prende dataframe e tokenizer 
+splitta in train e val in base a context_id e percentuale (o magari dopo aver fatto tutto)
+crea due huggingface datasets per train e val 
+in base a has_label processa i datasets in due modi differenti (map di hf datasets (due map diversi)) 
+- processa i datasets per creare label (token), eliminare le uncorrect rows, tenere row con subset dove sta la domanda  
+creare la funzione che ritorna le cose che ci servono 
+fare in modo che il padding venga fatto sul singolo batch e non su tutto 
+
+
+in base al tipo di tokenizer si fanno cose diverse 
