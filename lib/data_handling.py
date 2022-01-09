@@ -60,6 +60,11 @@ class RawSquadDataset:
             df = pd.json_normalize(json_file , self.JSON_RECORD ,meta=[["data", "title"],['data','paragraph','context'],['data','paragraph','qas','question'],['data','paragraph','qas','id']])
             df.rename(columns={"text": "answer","data.paragraph.qas.question":"question","data.paragraph.qas.id":"id"}, inplace=True)
             df['answer_end'] = df.answer_start + df.answer.apply(len)
+
+            df['label_char'] = [x for x in zip(df['answer_start'],df['answer_end'])]
+
+            df.drop(['answer_start','answer_end'],axis='columns',inplace=True)
+
             self.has_labels = True
 
         
@@ -70,7 +75,7 @@ class RawSquadDataset:
         df.reset_index(drop=True,inplace=True)
 
         # Reorder columns to be more pleaseant 
-        columns=['title','context','context_id','question','question_id']
+        columns=['context_id','question_id','title','context','question']
         not_pres = [col for col in df.columns if col not in columns]
         df = df[columns+not_pres]
 
@@ -116,6 +121,7 @@ class DataManager:
             encodings = {
                 'input_ids': [e.ids for e in context_encodings], 
                 'attention_mask': [e.attention_mask for e in context_encodings],
+                
             }
 
             return encodings    
