@@ -1,10 +1,12 @@
 TODO GENERIC
 
-- encodare dataset in datafram
-- creare custom class per data handling
-- capire come salvare gensim model 
-- creare datamanager 
-- train val split 
+- encodare dataset in dataframe ✔
+- creare custom class per data handling ✔
+- capire come salvare gensim model ✔ 
+- creare datamanager ✔
+- train val split ✔
+- dataloader 
+- train e val loop 
 - logging 
 - controllare errori 
 
