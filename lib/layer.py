@@ -114,7 +114,7 @@ class LinearAttentionLayer(nn.Module):
         attn_scores = attn_scores.view(question.shape[0], question.shape[1])
         # attn_scores = [bs, qtn_len]
         
-        attn_scores = attn_scores.masked_fill(question_mask == 1, -float('inf'))
+        attn_scores = attn_scores.masked_fill(question_mask == 0, -float('inf'))
         
         alpha = F.softmax(attn_scores, dim=1)
         # alpha = [bs, qtn_len]
@@ -160,7 +160,7 @@ class BilinearAttentionLayer(nn.Module):
         scores = scores.squeeze(2)
         # scores = [bs, ctx_len]
         
-        scores = scores.masked_fill(context_mask == 1, -float('inf'))
+        scores = scores.masked_fill(context_mask == 0, -float('inf'))
         
         #alpha = F.log_softmax(scores, dim=1)
         # alpha = [bs, ctx_len]

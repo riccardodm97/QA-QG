@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-import torch.nn.functional as F
 from layer import *
 
 class DrQA(nn.Module):
