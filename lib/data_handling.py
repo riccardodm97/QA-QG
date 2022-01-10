@@ -1,6 +1,7 @@
 import json
 import os
 
+import numpy as np
 import pandas as pd 
 import torch
 
@@ -94,13 +95,14 @@ class RecurrentDataManager:
 
     def __init__(self, dataset : RawSquadDataset, split : bool):
 
-        self.raw_dataset : RawSquadDataset = dataset
+        self.raw_dataset = dataset.df.copy()
+        self.has_labels = dataset.has_labels
 
         self.emb_model, self.vocab = utils.load_embedding_model()
 
         self.tokenizer = self._get_tokenizer()
 
-        self.hf_dataset = self._get_hf_dataset()
+        self.train_hf_dataset, self.val_hf_dataset = self._get_hf_dataset(split)
 
     def _get_tokenizer(self):
 
@@ -112,10 +114,15 @@ class RecurrentDataManager:
         return tokenizer
 
 
-    def _get_hf_dataset(self):  
+    def _get_hf_dataset(self, split : bool):  
+
+        assert (not self.has_labels and split ) != True   #TODO testare 
+
+        self._train_val_split(split)  #add a column to the dataset to mark the split to which each example belongs 
 
         #encoda dataframe as Huggingface dataset 
-        hf_dataset = Dataset.from_pandas(self.raw_dataset.df)
+        train_hf_dataset, val_hf_dataset = Dataset.from_pandas(self.raw_dataset[self.raw_dataset['split']=='train']), None 
+        if split : val_hf_dataset = Dataset.from_pandas(self.raw_dataset[self.raw_dataset['split']=='val'])
 
         def transform_with_label(batch):
 
@@ -150,13 +157,38 @@ class RecurrentDataManager:
 
             return batch
         
-        if self.raw_dataset.has_labels :
-            hf_dataset.set_transform(transform_with_label,output_all_columns=False)
+        if self.has_labels :
+            train_hf_dataset.set_transform(transform_with_label,output_all_columns=False)    #TODO output_all_columns
+            if split : 
+                val_hf_dataset.set_transform(transform_with_label,output_all_columns=False)   
         else:
-            hf_dataset.set_transform(transform_no_label,output_all_columns=False)
+            train_hf_dataset.set_transform(transform_no_label,output_all_columns=False)
         
-        return hf_dataset
+        return train_hf_dataset, val_hf_dataset
         
+
+    def _train_val_split(self,split):
+
+        self.raw_dataset['split'] = 'train'
+
+        if split : 
+            
+            perc_idx = int(np.percentile(self.raw_dataset.index, globals.TRAIN_VAL_SPLIT))   #index of the row where to split 
+            self.raw_dataset.loc[self.raw_dataset.index > perc_idx,'split'] = 'val' 
+
+            first_val = perc_idx + 1
+
+            c_id = self.raw_dataset.loc[perc_idx,'context_id']
+
+            # keep all the examples with the same context within the same split 
+            for row in self.raw_dataset[first_val:].iterrows():      
+
+                if row[1]['context_id'] == c_id :
+                    self.raw_dataset.loc[row[0],'split'] = 'train'
+                else :
+                    break
+        
+
 
 
 

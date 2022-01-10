@@ -1,12 +1,20 @@
-- encode dataset into dataframe 
-- create custom classes for handling data 
-- ispezionare dev_set e modificare data_handling 
+TODO GENERIC
+
+- encodare dataset in datafram
+- creare custom class per data handling
+- capire come salvare gensim model 
+- creare datamanager 
+- train val split 
+- logging 
+- controllare errori 
 
 
-eliminare (?) data da gitignore 
 
+TODO SPECIFIC 
 
-datamanager che prende dataframe e tokenizer 
+- datamanager
+ 
+ datamanager che prende dataframe e tokenizer 
 splitta in train e val in base a context_id e percentuale (o magari dopo aver fatto tutto)
 crea due huggingface datasets per train e val 
 in base a has_label processa i datasets in due modi differenti (map di hf datasets (due map diversi)) 
@@ -14,9 +22,6 @@ in base a has_label processa i datasets in due modi differenti (map di hf datase
 creare la funzione che ritorna le cose che ci servono 
 fare in modo che il padding venga fatto sul singolo batch e non su tutto 
 
-
 in base al tipo di tokenizer si fanno cose diverse 
 
-
-- logging 
-- capire come salvare gensim model 
+- controllare esempio ->   df_row: 87598, context_id: 18890, question_id: 5735d259012e2f140011a0a1
