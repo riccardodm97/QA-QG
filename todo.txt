@@ -16,3 +16,7 @@ fare in modo che il padding venga fatto sul singolo batch e non su tutto
 
 
 in base al tipo di tokenizer si fanno cose diverse 
+
+
+- logging 
+- capire come salvare gensim model 

@@ -1,32 +1,47 @@
 
-import lib.globals as glob
+import os 
+
+import lib.globals as globals 
 
 import numpy as np
-
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
+from gensim.utils import SaveLoad
 
 
 def load_embedding_model():
     """
     Loads a pre-trained word embedding model via gensim library
+
     """
+    model_name = "glove-wiki-gigaword-{}".format(globals.EMBEDDING_DIMENSION)
+    glove_model_path = os.path.join(globals.DATA_FOLDER, "glove_vectors.txt") 
 
-    model = "glove-wiki-gigaword-{}".format(glob.EMBEDDING_DIMENSION)
     try:
-        embedding_model : KeyedVectors = gloader.load(model)
 
-        # unknown vector as the mean of all vectors
-        assert glob.UNK_TOKEN not in embedding_model, f"{glob.UNK_TOKEN} key already present"
-        unk = np.mean(embedding_model.vectors, axis=0)
-        if unk in embedding_model.vectors:
-            np.random.uniform(low=-0.05, high=0.05, size=glob.EMBEDDING_DIMENSION)      
+        #if already stored in data, retrieve it 
+        if os.path.exists(glove_model_path): 
+            embedding_model = KeyedVectors.load_word2vec_format(glove_model_path, binary=True)
+        
+        else:
+            embedding_model : KeyedVectors = gloader.load(model_name)
 
-        # pad vector as a zero vector
-        assert glob.PAD_TOKEN not in embedding_model, f"{glob.PAD_TOKEN} key already present"
-        pad = np.zeros((embedding_model.vectors.shape[1],))
+            # unknown vector as the mean of all vectors
+            assert globals.UNK_TOKEN not in embedding_model, f"{globals.UNK_TOKEN} key already present"
+            unk = np.mean(embedding_model.vectors, axis=0)
+            if unk in embedding_model.vectors:
+                np.random.uniform(low=-0.05, high=0.05, size=globals.EMBEDDING_DIMENSION)      
 
-        embedding_model.add_vectors([glob.UNK_TOKEN,glob.PAD_TOKEN], [unk,pad])
+            # pad vector as a zero vector
+            assert globals.PAD_TOKEN not in embedding_model, f"{globals.PAD_TOKEN} key already present"
+            pad = np.zeros((embedding_model.vectors.shape[1],))
+
+            #add newly created vectors to the model
+            embedding_model.add_vectors([globals.UNK_TOKEN,globals.PAD_TOKEN], [unk,pad])
+
+            embedding_model.allocate_vecattrs()  #TODO perchè ? 
+
+            embedding_model.save_word2vec_format(glove_model_path, binary=True)
 
         return embedding_model, embedding_model.key_to_index
         
