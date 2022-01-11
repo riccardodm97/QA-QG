@@ -9,6 +9,7 @@ TODO GENERIC
 - train e val loop 
 - logging 
 - controllare errori 
+- refactor 
 
 
 
@@ -31,3 +32,8 @@ in base al tipo di tokenizer si fanno cose diverse
 - logger 
    
 si può metter un logger della lib logging per ogni modulo e usare logger = logging.getLogger(__name__)
+
+- refactor 
+
+DataManager (test, val ?)
+DrQA model 
