@@ -6,8 +6,12 @@ import lib.globals as globals
 import numpy as np
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
-from gensim.utils import SaveLoad
 
+import logging
+
+
+
+logger = logging.getLogger(__name__)
 
 def load_embedding_model():
     """
@@ -21,6 +25,8 @@ def load_embedding_model():
 
         #if already stored in data, retrieve it 
         if os.path.exists(glove_model_path): 
+
+            logging.info('loading embedding vectors from file')
             embedding_model = KeyedVectors.load_word2vec_format(glove_model_path, binary=True)
         
         else:
