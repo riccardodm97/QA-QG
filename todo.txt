@@ -5,11 +5,14 @@ TODO GENERIC
 - capire come salvare gensim model ✔ 
 - creare datamanager ✔
 - train val split ✔
-- dataloader 
+- dataloader ✔
 - train e val loop 
 - logging 
 - controllare errori 
 - refactor 
+- mettere i seed per randomicità 
+- to(device) cuda gpu 
+- gradient clipping e lr scheduler 
 
 
 

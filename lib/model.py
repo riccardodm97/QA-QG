@@ -4,14 +4,15 @@ from layer import *
 
 class DrQA(nn.Module):
     
-    def __init__(self, hidden_dim, num_layers, num_directions, dropout, weights_matrix, pad_idx, device):
+    def __init__(self, hidden_dim, num_layers, dropout, weights_matrix, pad_idx, device):
         
         super().__init__()
         
         self.device = device
+
+        self.num_directions = 2  #bidirectional LSTMs
         
-        #self.embedding = self.get_glove_embedding()
-        self.embedding_layer, self.embedding_dim = self.get_glove_embedding(weights_matrix, pad_idx)
+        self.embedding_layer, self.embedding_dim = get_embedding_layer(weights_matrix, pad_idx)
         
         self.context_bilstm = StackedBiLSTM(self.embedding_dim * 2, hidden_dim, num_layers, dropout)
         
@@ -25,41 +26,29 @@ class DrQA(nn.Module):
         
         self.align_embedding = AlignQuestionEmbedding(self.embedding_dim)
         
-        self.linear_attn_question = LinearAttentionLayer(hidden_dim*num_layers*num_directions) 
+        self.linear_attn_question = LinearAttentionLayer(hidden_dim*num_layers*self.num_directions) 
         
-        self.bilinear_attn_start = BilinearAttentionLayer(hidden_dim*num_layers*num_directions, 
-                                                          hidden_dim*num_layers*num_directions)
+        self.bilinear_attn_start = BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions, 
+                                                          hidden_dim*num_layers*self.num_directions)
         
-        self.bilinear_attn_end = BilinearAttentionLayer(hidden_dim*num_layers*num_directions,
-                                                        hidden_dim*num_layers*num_directions)
+        self.bilinear_attn_end = BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions,
+                                                        hidden_dim*num_layers*self.num_directions)
         
         self.dropout = nn.Dropout(dropout)
-   
-        
-    def get_glove_embedding(self, weights_matrix, pad_idx):
-        
-        # TODO: inserire weigths_matrix
-        # weights_matrix = np.load('drqaglove_vt.npy')
-        _, embedding_dim = weights_matrix.shape
-        embedding_layer = nn.Embedding.from_pretrained(weights_matrix, freeze=False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
-
-        return embedding_layer, embedding_dim
+      
     
-    
-    def forward(self, context, question, context_mask, question_mask):
+    def forward(self, inputs):   
        
-        # context = [bs, len_c]
-        # question = [bs, len_q]
-        # context_mask = [bs, len_c]
-        # question_mask = [bs, len_q]
-        
+        context = inputs['context_ids']              # [bs, len_c]
+        question = inputs['question_ids']            # [bs, len_q]
+        context_mask = inputs['context_mask']        # [bs, len_c]
+        question_mask = inputs['question_mask']      # [bs, len_q]
         
         ctx_embed = self.embedding_layer(context)
         # ctx_embed = [bs, len_c, emb_dim]
         
         ques_embed = self.embedding_layer(question)
         # ques_embed = [bs, len_q, emb_dim]
-        
 
         ctx_embed = self.dropout(ctx_embed)
      

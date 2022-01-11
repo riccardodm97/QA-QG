@@ -2,6 +2,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+import numpy as np
+
 class AlignQuestionEmbedding(nn.Module):
     
     def __init__(self, input_dim):        
@@ -37,7 +39,7 @@ class AlignQuestionEmbedding(nn.Module):
         
         # Fills elements of self tensor(align_scores) with value(-float(inf)) where mask is True. 
         # The shape of mask must be broadcastable with the shape of the underlying tensor.
-        align_scores = align_scores.masked_fill(qtn_mask == 0, -float('inf'))  # 0 identifies padding position
+        align_scores = align_scores.masked_fill(qtn_mask == 0, -float('inf'))  # 0 identifies padding position     #TODO float('-inf')
         # align_scores = [bs, ctx_len, qtn_len]
         
         align_scores_flat = align_scores.view(-1, question.size(1))
@@ -46,7 +48,7 @@ class AlignQuestionEmbedding(nn.Module):
         alpha = F.softmax(align_scores_flat, dim=1)
         alpha = alpha.view(-1, context.shape[1], question.shape[1])
         # alpha = [bs, ctx_len, qtn_len]
-        
+ 
         align_embedding = torch.bmm(alpha, question)
         # align = [bs, ctx_len, emb_dim]
         
@@ -79,8 +81,8 @@ class StackedBiLSTM(nn.Module):
         for i in range(self.num_layers):
 
             lstm_input = outputs[-1]
-            lstm_out = F.dropout(lstm_input, p=self.dropout)
-            lstm_out, (hidden, cell) = self.lstms[i](lstm_input)
+            lstm_input = F.dropout(lstm_input, p=self.dropout)
+            lstm_out, _ = self.lstms[i](lstm_input)
            
             outputs.append(lstm_out)
 
@@ -166,3 +168,12 @@ class BilinearAttentionLayer(nn.Module):
         # alpha = [bs, ctx_len]
         
         return scores
+
+def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int):
+
+        matrix = torch.from_numpy(weights_matrix)
+        
+        _ , embedding_dim = matrix.shape
+        embedding_layer = nn.Embedding.from_pretrained(matrix, freeze=False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
+
+        return embedding_layer, embedding_dim

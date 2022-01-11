@@ -3,7 +3,10 @@ import os
 
 import numpy as np
 import pandas as pd 
+
 import torch
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import RandomSampler, SequentialSampler, BatchSampler
 
 from tokenizers import  Tokenizer, Encoding
 from tokenizers.models import WordLevel
@@ -92,6 +95,99 @@ class RawSquadDataset:
 
 
 class RecurrentDataManager:
+
+    def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
+
+        self.df = dataset.df.copy()
+        self.device = device 
+
+        self.emb_model, self.vocab = utils.load_embedding_model()
+
+        self.tokenizer = self._get_tokenizer()
+
+        train_df, val_df = self._train_val_split() 
+        self.train_hf_dataset = self._build_hf_dataset(train_df)
+        self.val_hf_dataset = self._build_hf_dataset(val_df)
+
+    def _get_tokenizer(self):
+
+        tokenizer = Tokenizer(WordLevel(self.vocab,unk_token=globals.UNK_TOKEN))
+        tokenizer.normalizer = Sequence([StripAccents(), Lowercase(), Strip()])
+        tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
+        tokenizer.enable_padding(direction="right", pad_id=self.vocab[globals.PAD_TOKEN], pad_type_id=1, pad_token=globals.PAD_TOKEN)
+
+        return tokenizer
+
+
+    def _build_hf_dataset(self,df):  
+
+        #encode dataframe as Huggingface dataset 
+        hf_dataset = Dataset.from_pandas(df)
+
+        def transform_with_label(batch):
+
+            context_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['context'])
+            question_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['question'])
+
+            starts = list(map(lambda x: x[0],batch['label_char']))
+            ends = list(map(lambda x: x[1],batch['label_char']))
+
+            batch = {
+                'context_ids': torch.tensor([e.ids for e in context_encodings], device=self.device),
+                'question_ids': torch.tensor([e.ids for e in question_encodings], device=self.device),
+                'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
+                'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
+                'label_token_start': torch.tensor([e.char_to_token(starts[i]) for i,e in enumerate(context_encodings)], device=self.device),
+                'label_token_end': torch.tensor([e.char_to_token(ends[i]-1) for i,e in enumerate(context_encodings)], device=self.device)        
+            }
+
+            return batch
+        
+      
+        hf_dataset.set_transform(transform_with_label,output_all_columns=False)    #TODO output_all_columns
+        
+        return hf_dataset
+
+
+    def _train_val_split(self):
+
+        self.df['split'] = 'train'
+            
+        perc_idx = int(np.percentile(self.df.index, globals.TRAIN_VAL_SPLIT))   #index of the row where to split 
+        self.df.loc[self.df.index > perc_idx,'split'] = 'val' 
+
+        first_val = perc_idx + 1
+
+        c_id = self.df.loc[perc_idx,'context_id']
+
+        # keep all the examples with the same context within the same split 
+        for row in self.df[first_val:].iterrows():      
+
+            if row[1]['context_id'] == c_id :
+                self.df.loc[row[0],'split'] = 'train'
+            else :
+                break
+        
+        return self.df[self.df['split']=='train'].drop('split',1), self.df[self.df['split']=='val'].drop('split',1)
+        
+
+    
+def get_dataloader(dataset, batch_size : int, random : bool):
+
+    if random : 
+        sampler = BatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=False)
+    else:
+        sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
+    
+    return DataLoader(dataset,sampler=sampler)
+
+
+
+
+
+
+
+class TempDataManager:
 
     def __init__(self, dataset : RawSquadDataset, split : bool):
 
@@ -187,10 +283,6 @@ class RecurrentDataManager:
                     self.raw_dataset.loc[row[0],'split'] = 'train'
                 else :
                     break
-        
-
-
-
 
 
 

@@ -4,10 +4,12 @@ import os
 import lib.globals as globals 
 
 import numpy as np
+import torch 
+import random 
+import logging
+
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
-
-import logging
 
 
 
@@ -53,3 +55,14 @@ def load_embedding_model():
         
     except Exception as e:
         raise e('Error')
+    
+
+def set_random_seed():
+
+    torch.manual_seed(0)
+    random.seed(0)
+    np.random.seed(0)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+
