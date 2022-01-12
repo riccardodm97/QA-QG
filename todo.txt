@@ -12,7 +12,7 @@ TODO GENERIC
 - controllare errori 
 - refactor 
 - mettere i seed per randomicità 
-- to(device) cuda gpu 
+- to(device) cuda gpu sia tutti i dati che il modello 
 - gradient clipping e lr scheduler 
 - group answers by id (?)
 - pack_padded_sequence e viceversa 

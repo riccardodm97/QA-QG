@@ -1,7 +1,13 @@
+
+
 import torch 
 from torch import nn, optim
-
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
+
+from collections import OrderedDict
+
+from evaluate import QA_evaluate
 
 
 class QATrainer :
@@ -17,7 +23,12 @@ class QATrainer :
     
     def train_loop(self, iterator):
 
-        batch_loss = 0
+        batch_loss = 0.0
+
+        metrics = OrderedDict({
+
+        })
+
 
         self.model.train()
 
@@ -29,11 +40,11 @@ class QATrainer :
 
             predictions = self.model(batch)
 
-            pred_start, pred_end = predictions 
+            pred_start_raw, pred_end_raw = predictions 
 
             true_start, true_end = batch['label_token_start'].squeeze(), batch['label_token_end'].squeeze()
 
-            loss = self.criterion(pred_start,true_start) + self.criterion(pred_end,true_end)
+            loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)
 
             #backward pass 
             loss.backward()
@@ -41,10 +52,28 @@ class QATrainer :
 
             batch_loss += loss.item()    #accumulate batch loss 
 
+            pred_start, pred_end = self.compute_predictions(pred_start_raw,pred_end_raw)
 
-        epoch_loss = batch_loss/(batch_id+1) 
+            to_eval = OrderedDict ({
+                'pred_start' : pred_start.cpu(),
+                'pred_end' : pred_end.cpu(),
+                'true_start' : true_start.cpu(),
+                'true_end' : true_end.cpu(),
+                'context' : batch['context_text'],
+                'offsets' : batch['offsets'],
+                'answer' : batch['answer']
+                })
 
-        return epoch_loss 
+            batch_metrics = QA_evaluate(to_eval)
+            
+            #TODO APPEND VALUES OF BATCH_METRICS TO METRICS 
+
+
+        #TODO AVERAGE ALL RESULTS IN METRICS 
+
+        metrics['epoch_loss'] = batch_loss/(batch_id+1) 
+
+        return metrics
 
     
     def val_loop(self, iterator):
@@ -87,3 +116,12 @@ class QATrainer :
         
         
         return 
+    
+
+    def compute_predictions(starts,ends):
+
+        pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
+
+        pred_start, pred_end = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
+
+        return pred_start, pred_end

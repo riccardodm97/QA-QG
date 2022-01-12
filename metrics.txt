@@ -1,0 +1,8 @@
+
+
+
+
+METRICHE 
+- f1 che prende stringhe dal testo originale e gold label dall'answer e fa i suoi calcoli come evaluate.py
+- exact match che prende stringhe dal testo originale e gold label dall'answer e fa i suoi calcoli come evaluate.py
+- 
