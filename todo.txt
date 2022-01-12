@@ -6,13 +6,16 @@ TODO GENERIC
 - creare datamanager ✔
 - train val split ✔
 - dataloader ✔
-- train e val loop 
-- logging 
+- train e val loop ✔
+- metriche
+- logging + wandb
 - controllare errori 
 - refactor 
 - mettere i seed per randomicità 
 - to(device) cuda gpu 
 - gradient clipping e lr scheduler 
+- group answers by id (?)
+- pack_padded_sequence e viceversa 
 
 
 
@@ -40,3 +43,10 @@ si può metter un logger della lib logging per ogni modulo e usare logger = logg
 
 DataManager (test, val ?)
 DrQA model 
+
+
+ASSUNZIONI 
+
+- non ci sono più risposte alla stessa domanda
+- le label (risposte) ci sono sempre 
+- va sempre splittato in train e val 

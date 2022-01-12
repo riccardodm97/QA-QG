@@ -4,7 +4,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 
-class Trainer :
+class QATrainer :
 
     def __init__(self, model : nn.Module, optimizer : optim.Optimizer, criterion,  param : dict(), device): 
 
@@ -80,8 +80,8 @@ class Trainer :
 
         for epoch in range(self.param['n_epochs']):
 
-            train_boh = self.train_loop(train_dataloader)
-            val_boh = self.val_loop(val_dataloader)
+            train_metrics = self.train_loop(train_dataloader)
+            val_metrics = self.val_loop(val_dataloader)
         
         
         
