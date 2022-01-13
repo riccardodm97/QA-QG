@@ -126,7 +126,6 @@ class QATrainer :
         
         
         
-        return 
     
 
     def compute_predictions(starts,ends):
