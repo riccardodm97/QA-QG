@@ -6,10 +6,14 @@ Some of the methods used in the QA evaluation script are directly borrowed from 
 
 import re 
 import string
-from collections import namedtuple, OrderedDict, Counter, defaultdict
 
 import torch
 import numpy as np 
+import logging 
+
+from collections import namedtuple, OrderedDict, Counter, defaultdict
+
+
 
 
 def normalize_answer(s):

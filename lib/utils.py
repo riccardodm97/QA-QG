@@ -12,8 +12,8 @@ import gensim.downloader as gloader
 from gensim.models import KeyedVectors
 
 
-
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def load_embedding_model():
     """
@@ -32,7 +32,9 @@ def load_embedding_model():
             embedding_model = KeyedVectors.load_word2vec_format(glove_model_path, binary=True)
         
         else:
+            logging.info('downloading glove model...')
             embedding_model : KeyedVectors = gloader.load(model_name)
+            logging.info('glove loaded')
 
             # unknown vector as the mean of all vectors
             assert globals.UNK_TOKEN not in embedding_model, f"{globals.UNK_TOKEN} key already present"
@@ -50,6 +52,7 @@ def load_embedding_model():
             embedding_model.allocate_vecattrs()  #TODO perchè ? 
 
             embedding_model.save_word2vec_format(glove_model_path, binary=True)
+            logging.info('glove model saved to file in data directory')
 
         return embedding_model, embedding_model.key_to_index
         
