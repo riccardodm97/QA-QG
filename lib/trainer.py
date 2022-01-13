@@ -13,14 +13,13 @@ from evaluate import QA_evaluate
 
 class QATrainer :
 
-    def __init__(self, model : nn.Module, optimizer : optim.Optimizer, criterion,  param : dict(), device): 
+    def __init__(self, model : nn.Module, optimizer : optim.Optimizer, criterion, param : dict, device): 
 
         self.model = model 
         self.optimizer = optimizer
         self.criterion = criterion
-        self.device = device
-        self.param = param 
-
+        self.device = device               
+        self.param = param
     
     def train_loop(self, iterator):
 
@@ -44,7 +43,7 @@ class QATrainer :
             loss.backward()
             
             # gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 10)     #TODO CHE VALORE METTERE COME MAX_NORM ??
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.param['grad_clipping'])     #TODO CHE VALORE METTERE COME MAX_NORM ??
 
             #update the gradients
             self.optimizer.step()
@@ -113,9 +112,9 @@ class QATrainer :
         return {k: np.mean(v) for k,v in metrics.items()}
 
     
-    def train_and_eval(self, dataloaders : tuple[DataLoader,...], device):
+    def train_and_eval(self, dataloaders : tuple[DataLoader,...]):
 
-        self.model.to(device)
+        self.model.to(self.device)
 
         train_dataloader, val_dataloader = dataloaders
 

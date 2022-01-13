@@ -1,14 +1,16 @@
 import torch
-from torch import nn
-from layer import *
+import torch.nn as nn 
+
+from lib.layer import *
+from lib.utils import get_embedding_layer
 
 class DrQA(nn.Module):
     
-    def __init__(self, hidden_dim, num_layers, dropout, weights_matrix, pad_idx, device):
+    def __init__(self, hidden_dim, num_layers, dropout, weights_matrix, pad_idx):
         
         super().__init__()
         
-        self.device = device
+        # self.device = device      #TODO serve ?
 
         self.num_directions = 2  #bidirectional LSTMs
         
