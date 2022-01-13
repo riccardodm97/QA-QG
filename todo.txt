@@ -7,8 +7,8 @@ TODO GENERIC
 - train val split ✔
 - dataloader ✔
 - train e val loop ✔
-- metriche
-- logging + wandb
+- metriche ✔
+- logging + wandb 
 - controllare errori 
 - refactor 
 - mettere i seed per randomicità 
@@ -43,6 +43,9 @@ si può metter un logger della lib logging per ogni modulo e usare logger = logg
 
 DataManager (test, val ?)
 DrQA model 
+
+- rimozione errori 
+
 
 
 ASSUNZIONI 

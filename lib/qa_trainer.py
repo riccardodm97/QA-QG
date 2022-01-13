@@ -1,11 +1,12 @@
 
-
 import torch 
+import numpy as np
+
 from torch import nn, optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 from evaluate import QA_evaluate
 
@@ -23,12 +24,7 @@ class QATrainer :
     
     def train_loop(self, iterator):
 
-        batch_loss = 0.0
-
-        metrics = OrderedDict({
-
-        })
-
+        metrics = defaultdict(list)
 
         self.model.train()
 
@@ -38,9 +34,7 @@ class QATrainer :
             self.model.zero_grad(set_to_none=True)
             self.optimizer.zero_grad()        
 
-            predictions = self.model(batch)
-
-            pred_start_raw, pred_end_raw = predictions 
+            pred_start_raw, pred_end_raw = self.model(batch)
 
             true_start, true_end = batch['label_token_start'].squeeze(), batch['label_token_end'].squeeze()
 
@@ -48,9 +42,14 @@ class QATrainer :
 
             #backward pass 
             loss.backward()
+            
+            # gradient clipping
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 10)     #TODO CHE VALORE METTERE COME MAX_NORM ??
+
+            #update the gradients
             self.optimizer.step()
 
-            batch_loss += loss.item()    #accumulate batch loss 
+            # batch_loss += loss.item()    #accumulate batch loss 
 
             pred_start, pred_end = self.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -60,25 +59,24 @@ class QATrainer :
                 'true_start' : true_start.cpu(),
                 'true_end' : true_end.cpu(),
                 'context' : batch['context_text'],
-                'offsets' : batch['offsets'],
-                'answer' : batch['answer']
+                'offsets' : batch['context_offsets'],
+                'answer' : batch['answer_text']
                 })
 
             batch_metrics = QA_evaluate(to_eval)
+
+            batch_metrics['loss'] = loss.item()
             
-            #TODO APPEND VALUES OF BATCH_METRICS TO METRICS 
+            #append all values of batch metrics to the corresponid element in metrics 
+            for k,v in batch_metrics.items():
+                metrics[k].append(v)
 
-
-        #TODO AVERAGE ALL RESULTS IN METRICS 
-
-        metrics['epoch_loss'] = batch_loss/(batch_id+1) 
-
-        return metrics
+        return {k: np.mean(v) for k,v in metrics.items()}
 
     
     def val_loop(self, iterator):
 
-        batch_loss = 0
+        metrics = defaultdict(list)
 
         self.model.eval()
 
@@ -86,24 +84,38 @@ class QATrainer :
             
             for batch_id, batch in enumerate(iterator):
 
-                predictions = self.model(batch)
-
-                pred_start, pred_end = predictions 
+                pred_start_raw, pred_end_raw = self.model(batch)
 
                 true_start, true_end = batch['label_token_start'].squeeze(), batch['label_token_end'].squeeze()
 
-                loss = self.criterion(pred_start,true_start) + self.criterion(pred_end,true_end)
+                loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)
 
-                batch_loss += loss.item()   #accumulate batch loss 
+                pred_start, pred_end = self.compute_predictions(pred_start_raw,pred_end_raw)
+
+                to_eval = OrderedDict ({
+                    'pred_start' : pred_start.cpu(),
+                    'pred_end' : pred_end.cpu(),
+                    'true_start' : true_start.cpu(),
+                    'true_end' : true_end.cpu(),
+                    'context' : batch['context_text'],
+                    'offsets' : batch['offsets'],
+                    'answer' : batch['answer']
+                    })
+
+                batch_metrics = QA_evaluate(to_eval)
+
+                batch_metrics['loss'] = loss.item()
                 
+                #append all values of batch metrics to the corresponid element in metrics 
+                for k,v in batch_metrics.items():
+                    metrics[k].append(v)
 
-        epoch_loss = batch_loss/(batch_id+1) 
-
-        return epoch_loss
+        return {k: np.mean(v) for k,v in metrics.items()}
 
     
     def train_and_eval(self, dataloaders : tuple[DataLoader,...], device):
 
+        self.model.to(device)
 
         train_dataloader, val_dataloader = dataloaders
 

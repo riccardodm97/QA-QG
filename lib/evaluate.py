@@ -11,6 +11,7 @@ from collections import namedtuple, OrderedDict, Counter, defaultdict
 import torch
 import numpy as np 
 
+
 def normalize_answer(s):
   """Lower text and remove punctuation, articles and extra whitespace."""
 
@@ -91,16 +92,14 @@ def QA_evaluate(data : dict) -> dict:
         m["recall"].append(rec)
         m["f1"].append(f1)
         m["em"].append(em)
-        m["f1"].append(f1)
-        m["em"].append(em)
     
     metrics = {k: np.mean(v) for k, v in m.items()}
     
     start_dist = torch.abs(data['pred_start'] - data['pred_start']).mean()
     end_dist = torch.abs(data['pred_end'] - data['pred_end']).mean()
 
-    metrics['mean_start_dist'] = start_dist
-    metrics['mean_end_dist'] = end_dist
+    metrics['mean_start_dist'] = start_dist.item()
+    metrics['mean_end_dist'] = end_dist.item()
 
     return metrics 
 
