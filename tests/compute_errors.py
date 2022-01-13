@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(1, 'C:/Users/berse/Documents/GitHub/QA-QG')
+import os 
+
+sys.path.insert(1, os.getcwd())
 
 import os 
 import pandas as pd
@@ -7,6 +9,7 @@ import pandas as pd
 import lib.utils as utils 
 import lib.globals as globals
 import lib.data_handling as handling
+
 
 from tokenizers import  Tokenizer
 from tokenizers.models import WordLevel
@@ -37,8 +40,7 @@ class BuildErrorsDf:
 
         context_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['context'])
         answer_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['answer'])
-        question_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['question'])
-
+        
         starts = list(map(lambda x: x[0],batch['label_char']))
         ends = list(map(lambda x: x[1],batch['label_char']))
 

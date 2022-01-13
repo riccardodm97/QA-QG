@@ -9,3 +9,5 @@ UNK_TOKEN = "[UNK]"
 PAD_TOKEN = "[PAD]"
 
 TRAIN_VAL_SPLIT = 80         # percentage of train examples 
+
+RND_SEED = 42 
