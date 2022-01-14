@@ -124,7 +124,7 @@ class QA_DataManager:
             else :
                 break
         
-        return self.df[self.df['split']=='train'].drop('split',1), self.df[self.df['split']=='val'].drop('split',1)
+        return self.df[self.df['split']=='train'], self.df[self.df['split']=='val']
 
     
     def get_dataloaders(self,batch_size : int, random : bool):
