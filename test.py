@@ -1,4 +1,4 @@
 
-from train import qa_trainer
+from train import main
 
-qa_trainer('DrQA','training_set.json','cuda')
+main('qa','DrQA','training_set.json')
