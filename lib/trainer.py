@@ -129,8 +129,14 @@ class QATrainer :
             t = self.train_loop(train_dataloader)
             v = self.val_loop(val_dataloader)
 
-            logger.info('TRAIN EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',epoch+1,t['loss'],t['accuracy'],t['f1'],t['em'],t['mean_start_dist'],t['mean_end_dist'])
-            logger.info('VAL EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',epoch+1,v['loss'],v['accuracy'],v['f1'],v['em'],v['mean_start_dist'],v['mean_end_dist'])
+            logger.info('TRAIN EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
+                        epoch+1, t[self.f("train","loss")], t[self.f("train","accuracy")],
+                        t[self.f("train","f1")], t[self.f("train","em")], t[self.f("train","mean_start_dist")],
+                        t[self.f("train","mean_end_dist")])
+            logger.info('VAL EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
+                        epoch+1, v[self.f("val","loss")], v[self.f("val","accuracy")], v[self.f("val","f1")],
+                        v[self.f("val","em")], v[self.f("val","mean_start_dist")],
+                        v[self.f("val","mean_end_dist")])
             wandb.log(t, step=epoch)
             wandb.log(v, step=epoch)
 
