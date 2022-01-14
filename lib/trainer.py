@@ -10,6 +10,8 @@ from collections import OrderedDict, defaultdict
 
 from evaluate import QA_evaluate
 
+from typing import Tuple
+
 
 class QATrainer :
 
@@ -113,7 +115,7 @@ class QATrainer :
         return {k: np.mean(v) for k,v in metrics.items()}
 
     
-    def train_and_eval(self, dataloaders : tuple[DataLoader,...], device):
+    def train_and_eval(self, dataloaders : Tuple[DataLoader,...], device):
 
         self.model.to(device)
 
