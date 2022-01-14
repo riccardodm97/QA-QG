@@ -8,21 +8,20 @@ from torch.utils.data import DataLoader
 
 from collections import OrderedDict, defaultdict
 
-from evaluate import QA_evaluate
+from lib.evaluate import QA_evaluate
 
 from typing import Tuple
 
 
 class QATrainer :
 
-    def __init__(self, model : nn.Module, optimizer : optim.Optimizer, criterion,  param : dict(), device): 
+    def __init__(self, model : nn.Module, optimizer : optim.Optimizer, criterion, param : dict, device): 
 
         self.model = model 
         self.optimizer = optimizer
         self.criterion = criterion
-        self.device = device
-        self.param = param 
-
+        self.device = device               
+        self.param = param
     
     def train_loop(self, iterator):
 
@@ -38,7 +37,7 @@ class QATrainer :
 
             pred_start_raw, pred_end_raw = self.model(batch)
 
-            true_start, true_end = batch['label_token_start'].squeeze(), batch['label_token_end'].squeeze()
+            true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
             loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)
 
@@ -46,7 +45,7 @@ class QATrainer :
             loss.backward()
             
             # gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 10)     #TODO CHE VALORE METTERE COME MAX_NORM ??
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.param['grad_clipping'])     #TODO CHE VALORE METTERE COME MAX_NORM ??
 
             #update the gradients
             self.optimizer.step()
@@ -88,7 +87,7 @@ class QATrainer :
 
                 pred_start_raw, pred_end_raw = self.model(batch)
 
-                true_start, true_end = batch['label_token_start'].squeeze(), batch['label_token_end'].squeeze()
+                true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
                 loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)
 
@@ -100,8 +99,8 @@ class QATrainer :
                     'true_start' : true_start.cpu(),
                     'true_end' : true_end.cpu(),
                     'context' : batch['context_text'],
-                    'offsets' : batch['offsets'],
-                    'answer' : batch['answer']
+                    'offsets' : batch['context_offsets'],
+                    'answer' : batch['answer_text']
                     })
 
                 batch_metrics = QA_evaluate(to_eval)
@@ -115,9 +114,7 @@ class QATrainer :
         return {k: np.mean(v) for k,v in metrics.items()}
 
     
-    def train_and_eval(self, dataloaders : Tuple[DataLoader,...], device):
-
-        self.model.to(device)
+    def train_and_eval(self, dataloaders : Tuple[DataLoader,...]):
 
         train_dataloader, val_dataloader = dataloaders
 
@@ -126,13 +123,8 @@ class QATrainer :
             train_metrics = self.train_loop(train_dataloader)
             val_metrics = self.val_loop(val_dataloader)
         
-        
-        
-        
-        return 
-    
 
-    def compute_predictions(starts,ends):
+    def compute_predictions(self,starts,ends):
 
         pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
 

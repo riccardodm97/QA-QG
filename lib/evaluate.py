@@ -83,7 +83,7 @@ def QA_evaluate(data : dict) -> dict:
 
     for ex in d:
         pred_start_char = ex.offsets[ex.pred_start][0]
-        pred_end_char = ex.offsets[ex.pred_start][1]
+        pred_end_char = ex.offsets[ex.pred_end][1]
 
         pred_text : str = ex.context[pred_start_char:pred_end_char] 
 
@@ -99,8 +99,8 @@ def QA_evaluate(data : dict) -> dict:
     
     metrics = {k: np.mean(v) for k, v in m.items()}
     
-    start_dist = torch.abs(data['pred_start'] - data['pred_start']).mean()
-    end_dist = torch.abs(data['pred_end'] - data['pred_end']).mean()
+    start_dist = torch.abs(data['pred_start'].float() - data['true_start'].float()).mean()
+    end_dist = torch.abs(data['pred_end'].float() - data['true_end'].float()).mean()
 
     metrics['mean_start_dist'] = start_dist.item()
     metrics['mean_end_dist'] = end_dist.item()

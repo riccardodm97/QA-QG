@@ -1,6 +1,8 @@
 import torch
-from torch import nn
-from layer import *
+from torch import nn 
+
+import lib.layer as layer 
+from lib.utils import get_embedding_layer
 
 class DrQA(nn.Module):
     
@@ -8,15 +10,14 @@ class DrQA(nn.Module):
         
         super().__init__()
         
-        self.device = device
-
-        self.num_directions = 2  #bidirectional LSTMs
+        self.device = device      #TODO dove metterlo ?? 
+        self.num_directions = 2   #bidirectional LSTMs
         
-        self.embedding_layer, self.embedding_dim = get_embedding_layer(weights_matrix, pad_idx)
+        self.embedding_layer, self.embedding_dim = get_embedding_layer(weights_matrix, pad_idx, device)
         
-        self.context_bilstm = StackedBiLSTM(self.embedding_dim * 2, hidden_dim, num_layers, dropout)
+        self.context_bilstm = layer.StackedBiLSTM(self.embedding_dim * 2, hidden_dim, num_layers, dropout)
         
-        self.question_bilstm = StackedBiLSTM(self.embedding_dim, hidden_dim, num_layers, dropout)
+        self.question_bilstm = layer.StackedBiLSTM(self.embedding_dim, hidden_dim, num_layers, dropout)
         
         def tune_embedding(grad, words=1000):
             grad[words:] = 0
@@ -24,17 +25,19 @@ class DrQA(nn.Module):
         
         self.embedding_layer.weight.register_hook(tune_embedding)
         
-        self.align_embedding = AlignQuestionEmbedding(self.embedding_dim)
+        self.align_embedding = layer.AlignQuestionEmbedding(self.embedding_dim)
         
-        self.linear_attn_question = LinearAttentionLayer(hidden_dim*num_layers*self.num_directions) 
+        self.linear_attn_question = layer.LinearAttentionLayer(hidden_dim*num_layers*self.num_directions) 
         
-        self.bilinear_attn_start = BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions, 
+        self.bilinear_attn_start = layer.BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions, 
                                                           hidden_dim*num_layers*self.num_directions)
         
-        self.bilinear_attn_end = BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions,
+        self.bilinear_attn_end = layer.BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions,
                                                         hidden_dim*num_layers*self.num_directions)
         
         self.dropout = nn.Dropout(dropout)
+
+        self.to(self.device)
       
     
     def forward(self, inputs):   
@@ -69,7 +72,7 @@ class DrQA(nn.Module):
         qtn_weights = self.linear_attn_question(qtn_outputs, question_mask)
         # qtn_weights = [bs, len_q]
             
-        qtn_weighted = LinearAttentionLayer.weighted_average(qtn_outputs, qtn_weights)
+        qtn_weighted = layer.LinearAttentionLayer.weighted_average(qtn_outputs, qtn_weights)
         # qtn_weighted = [bs, hid_dim*6]
         
         start_scores = self.bilinear_attn_start(ctx_outputs, qtn_weighted, context_mask)
