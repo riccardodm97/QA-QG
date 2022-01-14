@@ -1,11 +1,10 @@
+
 import json
 import os
 import logging 
 
 import numpy as np
 import pandas as pd 
-
-
 import torch
 
 from tokenizers import  Tokenizer, Encoding
@@ -14,7 +13,6 @@ from tokenizers.normalizers import Lowercase, Sequence, Strip, StripAccents
 from tokenizers.pre_tokenizers import Punctuation
 from tokenizers.pre_tokenizers import Sequence as PreSequence
 from tokenizers.pre_tokenizers import Whitespace
-
 from datasets import Dataset 
 
 import lib.globals as globals
@@ -124,7 +122,7 @@ class QA_DataManager:
             else :
                 break
         
-        return self.df[self.df['split']=='train'].drop('split',1), self.df[self.df['split']=='val'].drop('split',1)
+        return self.df[self.df['split']=='train'], self.df[self.df['split']=='val']
 
     
     def get_dataloaders(self,batch_size : int, random : bool):

@@ -1,27 +1,52 @@
 
-import torch 
-import numpy as np
-
-from torch import nn, optim
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-
+import os
 from collections import OrderedDict, defaultdict
 
+import torch
+import torch.optim as optim
+import torch.nn as nn 
+
+from lib.data_handler import RawSquadDataset, QA_DataManager, RecurrentDataManager
+import lib.model as models
+import  lib.globals as globals
+import lib.utils as utils 
 from lib.evaluate import QA_evaluate
 
-from typing import Tuple
 
+class QA_handler : 
+     
+    def __init__(self,model_name, dataset, device):
+    
+        dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
 
-class QATrainer :
+        squad_dataset = RawSquadDataset(dataset_path)
 
-    def __init__(self, model : nn.Module, optimizer : optim.Optimizer, criterion, param : dict, device): 
+        if model_name == 'DrQA' : 
 
-        self.model = model 
-        self.optimizer = optimizer
-        self.criterion = criterion
-        self.device = device               
-        self.param = param
+            self.data_manager : QA_DataManager = RecurrentDataManager(squad_dataset,device)
+
+            HIDDEN_DIM = 128
+            LSTM_LAYER = 3
+            DROPUT = 0.3
+            N_EPOCHS = 5
+            GRAD_CLIPPING = 10
+            BATCH_SIZE = 32
+            RANDOM_BATCH = False
+            
+            self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
+
+            self.optimizer = optim.Adamax(self.model.parameters())
+            self.criterion = nn.CrossEntropyLoss().to(device)
+
+            self.run_param = {
+                'n_epochs' : N_EPOCHS,
+                'grad_clipping' : GRAD_CLIPPING
+            }
+    
+            self.dataloaders = self.data_manager.get_dataloaders(BATCH_SIZE,RANDOM_BATCH)
+        
+        elif model_name == 'BERT' :
+            raise NotImplementedError()
     
     def train_loop(self, iterator):
 
@@ -45,14 +70,12 @@ class QATrainer :
             loss.backward()
             
             # gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.param['grad_clipping'])     #TODO CHE VALORE METTERE COME MAX_NORM ??
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ? 
 
             #update the gradients
             self.optimizer.step()
 
-            # batch_loss += loss.item()    #accumulate batch loss 
-
-            pred_start, pred_end = self.compute_predictions(pred_start_raw,pred_end_raw)
+            pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
             to_eval = OrderedDict ({
                 'pred_start' : pred_start.cpu(),
@@ -72,7 +95,7 @@ class QATrainer :
             for k,v in batch_metrics.items():
                 metrics[k].append(v)
 
-        return {k: np.mean(v) for k,v in metrics.items()}
+        return utils.compute_avg_dict(metrics)
 
     
     def val_loop(self, iterator):
@@ -89,9 +112,9 @@ class QATrainer :
 
                 true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
-                loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)
+                loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)       #TODO come calcolarla ? 
 
-                pred_start, pred_end = self.compute_predictions(pred_start_raw,pred_end_raw)
+                pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
                 to_eval = OrderedDict ({
                     'pred_start' : pred_start.cpu(),
@@ -111,23 +134,23 @@ class QATrainer :
                 for k,v in batch_metrics.items():
                     metrics[k].append(v)
 
-        return {k: np.mean(v) for k,v in metrics.items()}
+        return utils.compute_avg_dict(metrics)
 
     
-    def train_and_eval(self, dataloaders : Tuple[DataLoader,...]):
+    def train_and_eval(self):
 
-        train_dataloader, val_dataloader = dataloaders
+        train_dataloader, val_dataloader = self.dataloaders
 
-        for epoch in range(self.param['n_epochs']):
+        for epoch in range(self.run_param['n_epochs']):
 
             train_metrics = self.train_loop(train_dataloader)
             val_metrics = self.val_loop(val_dataloader)
         
 
-    def compute_predictions(self,starts,ends):
+    
 
-        pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
 
-        pred_start, pred_end = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
 
-        return pred_start, pred_end
+        
+        
+

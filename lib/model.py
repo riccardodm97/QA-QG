@@ -10,7 +10,7 @@ class DrQA(nn.Module):
         
         super().__init__()
         
-        self.device = device      #TODO dove metterlo ?? 
+        self.device = device      
         self.num_directions = 2   #bidirectional LSTMs
         
         self.embedding_layer, self.embedding_dim = get_embedding_layer(weights_matrix, pad_idx, device)

@@ -1,19 +1,20 @@
 """
 This class containts the evaluation scripts for the QA (question answering) and the QG (question generation) tasks
 Some of the methods used in the QA evaluation script are directly borrowed from the official evaluation script for SQuAD version 1.1
-
 """
 
 import re 
 import string
-
-import torch
-import numpy as np 
 import logging 
 
 from collections import namedtuple, OrderedDict, Counter, defaultdict
 
+import torch
+import numpy as np 
 
+import lib.globals as globals
+
+logger = logging.getLogger(globals.LOG_NAME)
 
 
 def normalize_answer(s):

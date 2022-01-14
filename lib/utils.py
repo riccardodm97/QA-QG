@@ -1,19 +1,19 @@
 
-import os 
-
-import lib.globals as globals 
-
-import numpy as np
-import torch 
+import os
 import random 
 import logging
 
+import numpy as np
+import torch 
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler, SequentialSampler, BatchSampler
-
+import torch.nn.functional as F
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
+
+import lib.globals as globals 
+
 
 logger = logging.getLogger(globals.LOG_NAME)
 
@@ -51,7 +51,7 @@ def load_embedding_model():
             #add newly created vectors to the model
             embedding_model.add_vectors([globals.UNK_TOKEN,globals.PAD_TOKEN], [unk,pad])
 
-            embedding_model.allocate_vecattrs()  #TODO perchè ? 
+            embedding_model.allocate_vecattrs()  #TODO why ? library bug ? 
 
             embedding_model.save_word2vec_format(glove_model_path, binary=True)
             logger.info('glove model saved to file in data directory')
@@ -83,10 +83,46 @@ def build_dataloader(dataset, batch_size : int, random : bool):
 
 def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int, device = 'cpu'):
 
-        matrix = torch.from_numpy(weights_matrix).to(device) 
+    matrix = torch.from_numpy(weights_matrix).to(device) 
         
-        _ , embedding_dim = matrix.shape
-        embedding_layer = nn.Embedding.from_pretrained(matrix, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
+    _ , embedding_dim = matrix.shape
+    embedding_layer = nn.Embedding.from_pretrained(matrix, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
 
-        return embedding_layer, embedding_dim
+    return embedding_layer, embedding_dim
 
+
+def setup_logging():
+    """
+    Setup logging, mainly for debug purposes 
+    """
+
+    log_path = os.path.join(globals.DATA_FOLDER, "log.txt")
+    logger = logging.getLogger(globals.LOG_NAME)
+    logger.setLevel(logging.INFO)
+    fileHandler = logging.FileHandler(log_path)
+    fileHandler.setLevel(logging.INFO)                     
+    formatter = logging.Formatter("%(name)s: %(message)s")
+    fileHandler.setFormatter(formatter)
+    logger.addHandler(fileHandler)
+
+    return logger 
+
+
+def get_device():
+    """
+    Return a CUDA device, if available, or CPU otherwise
+    """
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+
+ 
+def compute_predictions(starts,ends):    #TODO come calcolarle ? 
+
+    pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
+    pred_start, pred_end = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
+
+    return pred_start, pred_end
+
+
+def compute_avg_dict(metrics : dict) -> dict :
+
+    return {k: np.mean(v) for k,v in metrics.items()}
