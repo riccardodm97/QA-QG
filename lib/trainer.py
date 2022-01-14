@@ -1,6 +1,7 @@
 
 import torch 
 import numpy as np
+import wandb
 
 from torch import nn, optim
 import torch.nn.functional as F
@@ -77,7 +78,7 @@ class QATrainer :
             for k,v in batch_metrics.items():
                 metrics[k].append(v)
 
-        return {k: np.mean(v).round(2) for k,v in metrics.items()}
+        return {self.f("train",k): np.mean(v).round(2) for k,v in metrics.items()}
 
     
     def val_loop(self, iterator):
@@ -116,7 +117,7 @@ class QATrainer :
                 for k,v in batch_metrics.items():
                     metrics[k].append(v)
 
-        return {k: np.mean(v).round(2) for k,v in metrics.items()}
+        return {self.f("val",k): np.mean(v).round(2) for k,v in metrics.items()}
 
     
     def train_and_eval(self, dataloaders : Tuple[DataLoader,...]):
@@ -130,6 +131,8 @@ class QATrainer :
 
             logger.info('TRAIN EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',epoch+1,t['loss'],t['accuracy'],t['f1'],t['em'],t['mean_start_dist'],t['mean_end_dist'])
             logger.info('VAL EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',epoch+1,v['loss'],v['accuracy'],v['f1'],v['em'],v['mean_start_dist'],v['mean_end_dist'])
+            wandb.log(t, step=epoch)
+            wandb.log(v, step=epoch)
 
    
 
@@ -140,3 +143,6 @@ class QATrainer :
         pred_start, pred_end = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
 
         return pred_start, pred_end
+
+    def f(prep : str, key : str):
+        return prep+'/' +key
