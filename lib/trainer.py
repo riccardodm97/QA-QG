@@ -144,5 +144,5 @@ class QATrainer :
 
         return pred_start, pred_end
 
-    def f(prep : str, key : str):
-        return prep+'/' +key
+    def f(self, prep : str, key : str):
+        return prep+'/'+key
