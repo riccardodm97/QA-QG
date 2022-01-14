@@ -1,0 +1,59 @@
+TODO GENERIC
+
+- encodare dataset in dataframe ✔
+- creare custom class per data handling ✔
+- capire come salvare gensim model ✔ 
+- creare datamanager ✔
+- train val split ✔
+- dataloader ✔
+- train e val loop ✔
+- metriche ✔
+- refactor ✔
+- mettere i seed per randomicità ✔
+- logging + wandb 
+- controllare errori 
+- to(device) cuda gpu sia tutti i dati che il modello 
+- gradient clipping e lr scheduler 
+- group answers by id (?)
+- pack_padded_sequence e viceversa 
+- dataloader sort per minimizzare padding 
+- commentare codice 
+- migliorare performance 
+- rimuovere assunzioni 
+
+
+
+TODO SPECIFIC 
+
+- datamanager
+ 
+ datamanager che prende dataframe e tokenizer 
+splitta in train e val in base a context_id e percentuale (o magari dopo aver fatto tutto)
+crea due huggingface datasets per train e val 
+in base a has_label processa i datasets in due modi differenti (map di hf datasets (due map diversi)) 
+- processa i datasets per creare label (token), eliminare le uncorrect rows, tenere row con subset dove sta la domanda  
+creare la funzione che ritorna le cose che ci servono 
+fare in modo che il padding venga fatto sul singolo batch e non su tutto 
+
+in base al tipo di tokenizer si fanno cose diverse 
+
+- controllare esempio ->   df_row: 87598, context_id: 18890, question_id: 5735d259012e2f140011a0a1
+
+- logger 
+   
+si può metter un logger della lib logging per ogni modulo e usare logger = logging.getLogger(__name__)
+
+- refactor 
+
+DataManager (test, val ?)
+DrQA model 
+
+- rimozione errori 
+
+
+
+ASSUNZIONI 
+
+- non ci sono più risposte alla stessa domanda
+- le label (risposte) ci sono sempre 
+- va sempre splittato in train e val 

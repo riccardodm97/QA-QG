@@ -146,6 +146,7 @@ class QA_handler :
             train_metrics = self.train_loop(train_dataloader)
             val_metrics = self.val_loop(val_dataloader)
         
+        #TODO do something with those metrics as save model somewhere 
 
     
 

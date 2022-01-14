@@ -21,9 +21,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     device = utils.get_device() 
 
     #setup wandb 
-    mode = None
-    if not log : 
-        mode = 'disabled'
+    mode = None if not log else 'disabled'
 
     config = {
         'device': device,
