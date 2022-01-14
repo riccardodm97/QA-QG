@@ -1,13 +1,12 @@
 import json
 import os
+import logging 
 
 import numpy as np
 import pandas as pd 
 
 
 import torch
-from torch.utils.data import DataLoader
-from torch.utils.data.sampler import RandomSampler, SequentialSampler, BatchSampler
 
 from tokenizers import  Tokenizer, Encoding
 from tokenizers.models import WordLevel
@@ -21,6 +20,7 @@ from datasets import Dataset
 import lib.globals as globals
 import lib.utils as utils 
 
+logger = logging.getLogger(globals.LOG_NAME)
 
 class RawSquadDataset:
 
@@ -31,7 +31,8 @@ class RawSquadDataset:
         self.dataset_path = dataset_path
 
         if self.dataset_path is not None:
-            assert os.path.exists(self.dataset_path), 'Error : the dataset path should contain json file'
+            assert os.path.exists(self.dataset_path), 'Error : the dataset path should contain dataset json file'
+            logger.info('loading dataset from data folder')
 
             self.df =  self._json_to_dataframe(self.dataset_path)
 
@@ -49,15 +50,15 @@ class RawSquadDataset:
 
         # If already present load dataframe from data folder 
         if os.path.exists(dataframe_path):
+            logging.info('dataset as dataframe already present in data folder, loading that instead...')
 
             df = pd.read_pickle(dataframe_path)
-
             self.has_labels = 'answer' in df.columns
             
             return df
 
         # Otherwise create Dataframe object 
-
+        logging.info('creating dataframe object from json file')
         json_file = json.loads(open(from_path).read())
 
         df = None
@@ -91,17 +92,67 @@ class RawSquadDataset:
 
         df = df.drop_duplicates()
 
+        logging.info('saving dataframe in data folder as pickle file')
         df.to_pickle(dataframe_path)
+        logging.info('saved')
 
         return df 
 
-
-class RecurrentDataManager:
+class QA_DataManager: 
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
         self.df = dataset.df.copy()
         self.device = device 
+    
+    def _train_val_split(self):
+
+        self.df['split'] = 'train'
+            
+        perc_idx = int(np.percentile(self.df.index, globals.TRAIN_VAL_SPLIT))   #index of the row where to split 
+        self.df.loc[self.df.index > perc_idx,'split'] = 'val' 
+
+        first_val = perc_idx + 1
+
+        c_id = self.df.loc[perc_idx,'context_id']
+
+        # keep all the examples with the same context within the same split 
+        for row in self.df[first_val:].iterrows():      
+
+            if row[1]['context_id'] == c_id :
+                self.df.loc[row[0],'split'] = 'train'
+            else :
+                break
+        
+        return self.df[self.df['split']=='train'].drop('split',1), self.df[self.df['split']=='val'].drop('split',1)
+
+    
+    def get_dataloaders(self,batch_size : int, random : bool):
+
+        #TODO assicurarsi che ci sono i hf_dataset 
+        
+        train_dl = utils.build_dataloader(self.train_hf_dataset, batch_size, random)
+        val_dl = utils.build_dataloader(self.val_hf_dataset, batch_size, random)
+
+        return train_dl, val_dl 
+
+    
+    def _get_tokenizer(self):
+
+        raise NotImplementedError()
+
+
+    def _build_hf_dataset(self,df):  
+
+        raise NotImplementedError()
+
+    
+
+class RecurrentDataManager(QA_DataManager):
+
+    def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
+
+        super().__init__(dataset,device)
 
         self.emb_model, self.vocab = utils.load_embedding_model()
 
@@ -154,37 +205,7 @@ class RecurrentDataManager:
         return hf_dataset
 
 
-    def _train_val_split(self):
-
-        self.df['split'] = 'train'
-            
-        perc_idx = int(np.percentile(self.df.index, globals.TRAIN_VAL_SPLIT))   #index of the row where to split 
-        self.df.loc[self.df.index > perc_idx,'split'] = 'val' 
-
-        first_val = perc_idx + 1
-
-        c_id = self.df.loc[perc_idx,'context_id']
-
-        # keep all the examples with the same context within the same split 
-        for row in self.df[first_val:].iterrows():      
-
-            if row[1]['context_id'] == c_id :
-                self.df.loc[row[0],'split'] = 'train'
-            else :
-                break
-        
-        return self.df[self.df['split']=='train'].drop('split',1), self.df[self.df['split']=='val'].drop('split',1)
-        
-
-    
-def get_dataloader(dataset, batch_size : int, random : bool):
-
-    if random : 
-        sampler = BatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=False)
-    else:
-        sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
-    
-    return DataLoader(dataset,sampler=sampler)
+   
 
 
 

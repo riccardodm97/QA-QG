@@ -168,12 +168,3 @@ class BilinearAttentionLayer(nn.Module):
         # alpha = [bs, ctx_len]
         
         return scores
-
-def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int):
-
-        matrix = torch.from_numpy(weights_matrix)
-        
-        _ , embedding_dim = matrix.shape
-        embedding_layer = nn.Embedding.from_pretrained(matrix, freeze=False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
-
-        return embedding_layer, embedding_dim

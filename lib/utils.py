@@ -8,6 +8,10 @@ import torch
 import random 
 import logging
 
+from torch import nn
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import RandomSampler, SequentialSampler, BatchSampler
+
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
 
@@ -60,10 +64,29 @@ def load_embedding_model():
 
 def set_random_seed():
 
-    torch.manual_seed(0)
-    random.seed(0)
-    np.random.seed(0)
+    torch.manual_seed(globals.RND_SEED)
+    random.seed(globals.RND_SEED)
+    np.random.seed(globals.RND_SEED)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
 
+ 
+def build_dataloader(dataset, batch_size : int, random : bool):
+
+    if random : 
+        sampler = BatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=False)
+    else:
+        sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
+    
+    return DataLoader(dataset,sampler=sampler,batch_size=None)
+
+
+def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int, device = 'cpu'):
+
+        matrix = torch.from_numpy(weights_matrix).to(device) 
+        
+        _ , embedding_dim = matrix.shape
+        embedding_layer = nn.Embedding.from_pretrained(matrix, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
+
+        return embedding_layer, embedding_dim
 
