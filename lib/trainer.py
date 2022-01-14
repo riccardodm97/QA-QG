@@ -129,8 +129,8 @@ class QATrainer :
             t = self.train_loop(train_dataloader)
             v = self.val_loop(val_dataloader)
 
-            logger.info('TRAIN EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',epoch+1,t['loss'],t['accuracy'],t['f1'],t['em'],t['mean_start_dist'],t['mean_end_dist'])
-            logger.info('VAL EPOCH %d: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',epoch+1,v['loss'],v['accuracy'],v['f1'],v['em'],v['mean_start_dist'],v['mean_end_dist'])
+            logger.info(f"TRAIN EPOCH {epoch+1:.2f}: loss {t['loss']:.2f}, accuracy {t['accuracy']:.2f}, f1 {t['f1']:.2f}, em {t['em']:.2f}, s_dist {t['mean_start_dist']:.2f}, e_dist {t['mean_end_dist']:.2f}")
+            logger.info(f"VAL EPOCH {epoch+1:.2f}: loss {v['loss']:.2f}, accuracy {v['accuracy']:.2f}, f1 {v['f1']:.2f}, em {v['em']:.2f}, s_dist {v['mean_start_dist']:.2f}, e_dist {v['mean_end_dist']:.2f}")
             wandb.log(t, step=epoch)
             wandb.log(v, step=epoch)
 

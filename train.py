@@ -32,7 +32,7 @@ def qa_trainer(model_name, dataset, device):
         LSTM_LAYER = 3
         DROPUT = 0.3
         N_EPOCHS = 15
-        GRAD_CLIPPING = 1
+        GRAD_CLIPPING = 10
         BATCH_SIZE = 32
         RANDOM_BATCH = False
         
