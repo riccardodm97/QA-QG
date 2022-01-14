@@ -9,8 +9,13 @@ from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
 
 from lib.evaluate import QA_evaluate
+import lib.globals as globals
 
 from typing import Tuple
+
+import logging 
+
+logger = logging.getLogger(globals.LOG_NAME)
 
 
 class QATrainer :
@@ -72,7 +77,7 @@ class QATrainer :
             for k,v in batch_metrics.items():
                 metrics[k].append(v)
 
-        return {k: np.mean(v) for k,v in metrics.items()}
+        return {k: np.mean(v).round(2) for k,v in metrics.items()}
 
     
     def val_loop(self, iterator):
@@ -111,7 +116,7 @@ class QATrainer :
                 for k,v in batch_metrics.items():
                     metrics[k].append(v)
 
-        return {k: np.mean(v) for k,v in metrics.items()}
+        return {k: np.mean(v).round(2) for k,v in metrics.items()}
 
     
     def train_and_eval(self, dataloaders : Tuple[DataLoader,...]):
@@ -120,9 +125,13 @@ class QATrainer :
 
         for epoch in range(self.param['n_epochs']):
 
-            train_metrics = self.train_loop(train_dataloader)
-            val_metrics = self.val_loop(val_dataloader)
-        
+            t = self.train_loop(train_dataloader)
+            v = self.val_loop(val_dataloader)
+
+            logger.info('TRAIN EPOCH %s: loss %d, accuracy %d, f1 %d, em %d, s_dist %d, e_dist %d',epoch+1,t['loss'],t['accuracy'],t['f1'],t['em'],t['mean_start_dist'],t['mean_end_dist'])
+            logger.info('VAL EPOCH %s: loss %d, accuracy %d, f1 %d, em %d, s_dist %d, e_dist %d',epoch+1,v['loss'],v['accuracy'],v['f1'],v['em'],v['mean_start_dist'],v['mean_end_dist'])
+
+   
 
     def compute_predictions(self,starts,ends):
 
