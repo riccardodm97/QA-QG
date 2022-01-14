@@ -50,7 +50,7 @@ def qa_trainer(model_name, dataset, device):
 
         dataloaders = data_manager.get_dataloaders(BATCH_SIZE,RANDOM_BATCH)
 
-        trainer.val_loop(dataloaders[1])
+        trainer.train_and_eval(dataloaders)
     
     elif model_name == 'BERT' :
         raise NotImplementedError()
