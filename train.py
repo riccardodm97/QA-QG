@@ -31,8 +31,8 @@ def qa_trainer(model_name, dataset, device):
         HIDDEN_DIM = 128
         LSTM_LAYER = 3
         DROPUT = 0.3
-        N_EPOCHS = 5
-        GRAD_CLIPPING = 10
+        N_EPOCHS = 15
+        GRAD_CLIPPING = 1
         BATCH_SIZE = 32
         RANDOM_BATCH = False
         
