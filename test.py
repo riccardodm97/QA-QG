@@ -1,9 +1,4 @@
 
-from lib.utils import load_embedding_model
-import lib.globals as globals 
+from train import qa_trainer
 
-m,v = load_embedding_model()
-
-print(m.vectors)
-
-print(v[globals.PAD_TOKEN])
+qa_trainer('DrQA','training_set.json','cuda')

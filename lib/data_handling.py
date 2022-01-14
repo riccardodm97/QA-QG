@@ -1,5 +1,6 @@
 import json
 import os
+import logging 
 
 import numpy as np
 import pandas as pd 
@@ -19,6 +20,7 @@ from datasets import Dataset
 import lib.globals as globals
 import lib.utils as utils 
 
+logger = logging.getLogger(globals.LOG_NAME)
 
 class RawSquadDataset:
 
@@ -29,7 +31,8 @@ class RawSquadDataset:
         self.dataset_path = dataset_path
 
         if self.dataset_path is not None:
-            assert os.path.exists(self.dataset_path), 'Error : the dataset path should contain json file'
+            assert os.path.exists(self.dataset_path), 'Error : the dataset path should contain dataset json file'
+            logger.info('loading dataset from data folder')
 
             self.df =  self._json_to_dataframe(self.dataset_path)
 
@@ -47,15 +50,15 @@ class RawSquadDataset:
 
         # If already present load dataframe from data folder 
         if os.path.exists(dataframe_path):
+            logging.info('dataset as dataframe already present in data folder, loading that instead...')
 
             df = pd.read_pickle(dataframe_path)
-
             self.has_labels = 'answer' in df.columns
             
             return df
 
         # Otherwise create Dataframe object 
-
+        logging.info('creating dataframe object from json file')
         json_file = json.loads(open(from_path).read())
 
         df = None
@@ -89,7 +92,9 @@ class RawSquadDataset:
 
         df = df.drop_duplicates()
 
+        logging.info('saving dataframe in data folder as pickle file')
         df.to_pickle(dataframe_path)
+        logging.info('saved')
 
         return df 
 

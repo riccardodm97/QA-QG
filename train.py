@@ -20,7 +20,7 @@ import torch.nn as nn
 def qa_trainer(model_name, dataset, device):
 
     dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
-    assert os.path.splitext(dataset_path)[0] == '.json', 'The dataset file should be in json format'
+    assert os.path.splitext(dataset_path)[1] == '.json', 'The dataset file should be in json format'
 
     squad_dataset = RawSquadDataset(dataset_path)
 
@@ -36,7 +36,7 @@ def qa_trainer(model_name, dataset, device):
         BATCH_SIZE = 32
         RANDOM_BATCH = False
         
-        model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPUT,data_manager.emb_model,data_manager.vocab[globals.PAD_TOKEN])
+        model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPUT,data_manager.emb_model.vectors,data_manager.vocab[globals.PAD_TOKEN],device)
 
         optimizer = optim.Adamax(model.parameters())
         criterion = nn.CrossEntropyLoss().to(device)
@@ -50,7 +50,7 @@ def qa_trainer(model_name, dataset, device):
 
         dataloaders = data_manager.get_dataloaders(BATCH_SIZE,RANDOM_BATCH)
 
-        trainer.train_and_eval(dataloaders)
+        trainer.val_loop(dataloaders[1])
     
     elif model_name == 'BERT' :
         raise NotImplementedError()
@@ -71,7 +71,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     logger = logging.getLogger(globals.LOG_NAME)
     logger.setLevel(logging.INFO)
     fileHandler = logging.FileHandler(log_path)
-    fileHandler.setLevel(logging.INFO)
+    #fileHandler.setLevel(logging.INFO)                      #TODO 
     formatter = logging.Formatter("%(name)s: %(message)s")
     fileHandler.setFormatter(formatter)
     logger.addHandler(fileHandler)

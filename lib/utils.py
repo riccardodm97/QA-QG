@@ -78,15 +78,15 @@ def build_dataloader(dataset, batch_size : int, random : bool):
     else:
         sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
     
-    return DataLoader(dataset,sampler=sampler)
+    return DataLoader(dataset,sampler=sampler,batch_size=None)
 
 
-def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int):
+def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int, device = 'cpu'):
 
-        matrix = torch.from_numpy(weights_matrix)  #TODO .to(device) ? 
+        matrix = torch.from_numpy(weights_matrix).to(device) 
         
         _ , embedding_dim = matrix.shape
-        embedding_layer = nn.Embedding.from_pretrained(matrix, freeze=False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
+        embedding_layer = nn.Embedding.from_pretrained(matrix, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
 
         return embedding_layer, embedding_dim
 
