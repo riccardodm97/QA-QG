@@ -27,7 +27,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
         'device': device,
         'task': task,
         'model_name': model_name,
-        'dataset_file':dataset
+        'dataset_file': dataset
     }
 
     wandb.init(config = config, project="squad", entity="qa-qg", mode=mode)

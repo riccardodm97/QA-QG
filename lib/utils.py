@@ -2,6 +2,7 @@
 import os
 import random 
 import logging
+import time 
 
 import numpy as np
 import torch 
@@ -22,6 +23,8 @@ def load_embedding_model():
     Loads a pre-trained word embedding model via gensim library
 
     """
+    start = time.perf_counter()
+
     model_name = "glove-wiki-gigaword-{}".format(globals.EMBEDDING_DIMENSION)
     glove_model_path = os.path.join(globals.DATA_FOLDER, "glove_vectors.txt")
 
@@ -55,6 +58,9 @@ def load_embedding_model():
 
             embedding_model.save_word2vec_format(glove_model_path, binary=True)
             logger.info('glove model saved to file in data directory')
+        
+        end = time.perf_counter()
+        logger.info('loading time: %f',start-end)
 
         return embedding_model, embedding_model.key_to_index
         
@@ -123,6 +129,14 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
     return pred_start, pred_end
 
 
-def compute_avg_dict(metrics : dict) -> dict :
+def compute_avg_dict(mode : str, metrics : dict) -> dict :
 
-    return {k: np.mean(v) for k,v in metrics.items()}
+    def prepend_mode(key : str):
+        return mode + '/' + key
+    
+    def cond_mean(value):
+        if isinstance(value,list):
+            return np.mean(value).round(2)
+        else : return np.round(value,2)
+
+    return {prepend_mode(k): cond_mean(v) for k,v in metrics.items()}

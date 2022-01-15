@@ -1,17 +1,22 @@
 
 import os
+import logging
+import time 
 from collections import OrderedDict, defaultdict
 
 import torch
 import torch.optim as optim
 import torch.nn as nn 
+import wandb
 
-from lib.data_handler import RawSquadDataset, QA_DataManager, RecurrentDataManager
+from lib.data_handler import RawSquadDataset, DataManager, RecurrentDataManager
 import lib.model as models
 import  lib.globals as globals
 import lib.utils as utils 
 from lib.evaluate import QA_evaluate
 
+
+logger = logging.getLogger(globals.LOG_NAME)
 
 class QA_handler : 
      
@@ -23,17 +28,17 @@ class QA_handler :
 
         if model_name == 'DrQA' : 
 
-            self.data_manager : QA_DataManager = RecurrentDataManager(squad_dataset,device)
+            self.data_manager : DataManager = RecurrentDataManager(squad_dataset,device)
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
-            DROPUT = 0.3
+            DROPOUT = 0.3
             N_EPOCHS = 5
             GRAD_CLIPPING = 10
             BATCH_SIZE = 32
             RANDOM_BATCH = False
             
-            self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
+            self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
             self.optimizer = optim.Adamax(self.model.parameters())
             self.criterion = nn.CrossEntropyLoss().to(device)
@@ -50,6 +55,7 @@ class QA_handler :
     
     def train_loop(self, iterator):
 
+        start = time.perf_counter()
         metrics = defaultdict(list)
 
         self.model.train()
@@ -94,12 +100,16 @@ class QA_handler :
             #append all values of batch metrics to the corresponid element in metrics 
             for k,v in batch_metrics.items():
                 metrics[k].append(v)
+        
+        end = time.perf_counter()
+        metrics['epoch_time'] = start-end
 
-        return utils.compute_avg_dict(metrics)
+        return utils.compute_avg_dict('train',metrics)
 
     
     def val_loop(self, iterator):
 
+        start = time.perf_counter()
         metrics = defaultdict(list)
 
         self.model.eval()
@@ -133,8 +143,11 @@ class QA_handler :
                 #append all values of batch metrics to the corresponid element in metrics 
                 for k,v in batch_metrics.items():
                     metrics[k].append(v)
+        
+        end = time.perf_counter()
+        metrics['epoch_time'] = start-end
 
-        return utils.compute_avg_dict(metrics)
+        return utils.compute_avg_dict('val',metrics)
 
     
     def train_and_eval(self):
@@ -143,8 +156,14 @@ class QA_handler :
 
         for epoch in range(self.run_param['n_epochs']):
 
+            start_time = time.perf_counter()
+
             train_metrics = self.train_loop(train_dataloader)
             val_metrics = self.val_loop(val_dataloader)
+
+            end_time = time.perf_counter()
+
+            logger.info('epoch %d, tot time for train and eval: %f',epoch+1,start_time-end_time)
         
         #TODO do something with those metrics as save model somewhere 
 

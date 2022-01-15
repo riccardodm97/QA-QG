@@ -6,6 +6,7 @@ Some of the methods used in the QA evaluation script are directly borrowed from 
 import re 
 import string
 import logging 
+import time 
 
 from collections import namedtuple, OrderedDict, Counter, defaultdict
 
@@ -76,6 +77,7 @@ def f1_score(precision, recall):
 def QA_evaluate(data : dict) -> dict:
 
     #TODO assert che tutte le liste che sono valori del dizionario data abbiano la stessa lunghezza
+    start = time.perf_counter()
 
     m = defaultdict(list)
 
@@ -105,6 +107,9 @@ def QA_evaluate(data : dict) -> dict:
 
     metrics['mean_start_dist'] = start_dist.item()
     metrics['mean_end_dist'] = end_dist.item()
+
+    end = time.perf_counter()
+    logger.info('batch metrics computation: %f',end-start)
 
     return metrics 
 
