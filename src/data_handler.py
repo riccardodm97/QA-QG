@@ -1,4 +1,5 @@
 
+from cgi import test
 import json
 import os
 import logging 
@@ -27,17 +28,28 @@ class RawSquadDataset:
 
     JSON_RECORD = ['data','paragraphs','qas','answers']
 
-    def __init__(self, dataset_path = None):
+    def __init__(self, train_dataset_path = None, test_dataset_path = None):
+
+        assert not train_dataset_path and not test_dataset_path, 'No path has been passed'
         
-        self.dataset_path = dataset_path
+        self.train_dataset_path = train_dataset_path
+        self.test_dataset_path = test_dataset_path
 
-        if self.dataset_path is not None:
-            assert os.path.exists(self.dataset_path), 'Error : the dataset path should contain dataset json file'
+        self.train_df = None
+        if self.train_dataset_path is not None:
+            assert os.path.exists(self.train_dataset_path), 'Error : the train dataset path should contain dataset json file'
 
-            logger.info('loading dataset from data folder')
-            self.df =  self._json_to_dataframe(self.dataset_path)
+            logger.info('loading train dataset from data folder')
+            self.train_df =  self._json_to_dataframe(self.train_dataset_path)
+            assert "answer" in self.train_df.columns, 'Error : no answers in train dataset'
 
-        else : raise Exception('The dataset path is empty') 
+        self.test_df = None
+        if self.test_dataset_path is not None:
+            assert os.path.exists(self.test_dataset_path), 'Error : the test dataset path should contain dataset json file'
+
+            logger.info('loading test dataset from data folder')
+            self.test_df =  self._json_to_dataframe(self.test_dataset_path)
+            self.test_has_labels = "answer" in self.test_df.columns
 
     
     def _json_to_dataframe(self,from_path):
@@ -53,7 +65,6 @@ class RawSquadDataset:
         if os.path.exists(dataframe_path):
             logger.info('dataset as dataframe already present in data folder, loading that instead...')
             df = pd.read_pickle(dataframe_path)
-            self.has_labels = 'answer' in df.columns
             
             return df
 
@@ -66,7 +77,6 @@ class RawSquadDataset:
             df = pd.json_normalize(json_file, self.JSON_RECORD[:-1],meta=[["data", "title"],['data','paragraph','context']])
             if "answers" in df.columns:
                 df = df.drop("answers", axis="columns")
-            self.has_labels = False
         else:
             df = pd.json_normalize(json_file , self.JSON_RECORD ,meta=[["data", "title"],['data','paragraph','context'],['data','paragraph','qas','question'],['data','paragraph','qas','id']])
             df.rename(columns={"text": "answer","data.paragraph.qas.question":"question","data.paragraph.qas.id":"id"}, inplace=True)
@@ -75,8 +85,6 @@ class RawSquadDataset:
             df['label_char'] = [x for x in zip(df['answer_start'],df['answer_end'])]
 
             df.drop(['answer_start','answer_end'],axis='columns',inplace=True)
-
-            self.has_labels = True
 
         
         df["context_id"] = df["data.paragraph.context"].factorize()[0]
@@ -102,59 +110,74 @@ class DataManager:
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
-        self.df = dataset.df.copy()
-        self.df_has_labels = dataset.has_labels
+        self.dataset = dataset
         self.device = device 
 
         self.tokenizer = self._get_tokenizer()
 
-        train_df, val_df = self._train_val_split() 
-        self.train_hf_dataset = self._build_hf_dataset(train_df)
-        self.val_hf_dataset = self._build_hf_dataset(val_df)
+        self.train_hf_dataset, self.val_hf_dataset = None, None
+        if self.dataset.train_df :
+            train_df, val_df = self._train_val_split(self.dataset.train_df) 
+            self.train_hf_dataset = self._build_hf_dataset(train_df)
+            self.val_hf_dataset = self._build_hf_dataset(val_df)
+        
+        self.test_hf_dataset = None
+        if self.dataset.test_df :
+            test_df = self.dataset.test_df
+            self.test_hf_dataset = self._build_hf_dataset(test_df, self.dataset.test_has_labels)
     
-    def _train_val_split(self):
+    def _train_val_split(self, df):
 
         logger.info('splitting dataset dataframe in train e val')
 
-        self.df['split'] = 'train'
+        df['split'] = 'train'
             
-        perc_idx = int(np.percentile(self.df.index, globals.TRAIN_VAL_SPLIT))   #index of the row where to split 
-        self.df.loc[self.df.index > perc_idx,'split'] = 'val' 
+        perc_idx = int(np.percentile(df.index, globals.TRAIN_VAL_SPLIT))   #index of the row where to split 
+        df.loc[df.index > perc_idx,'split'] = 'val' 
 
         first_val = perc_idx + 1
 
-        c_id = self.df.loc[perc_idx,'context_id']
+        c_id = df.loc[perc_idx,'context_id']
 
         # keep all the examples with the same context within the same split 
-        for row in self.df[first_val:].iterrows():      
+        for row in df[first_val:].iterrows():      
 
             if row[1]['context_id'] == c_id :
-                self.df.loc[row[0],'split'] = 'train'
+                df.loc[row[0],'split'] = 'train'
             else :
                 break
         
-        return self.df[self.df['split']=='train'], self.df[self.df['split']=='val']
+        return df[df['split']=='train'], df[df['split']=='val']
 
     
-    def get_dataloaders(self,batch_size : int, random : bool):
+    def get_dataloader(self, split : str, batch_size : int, random : bool):
 
-        #TODO assicurarsi che ci sono gli hf_dataset 
+        # if split=='train':
+        #     assert self.train_hf_dataset, 'No train dataset present'
+        #     return utils.build_dataloader(self.train_hf_dataset, batch_size, random)
+        # elif split=='val':
+        #     assert self.val_hf_dataset, 'No val dataset present'
+        #     return utils.build_dataloader(self.val_hf_dataset, batch_size, random)
+        # else :
+        #     assert self.test_hf_dataset, 'No test dataset present'
+        #     return utils.build_dataloader(self.test_hf_dataset, batch_size, random)
+
+        dataset = getattr(self,split+'_hf_dataset')
+        assert dataset, f'No {split} dataset present'
+
+        return utils.build_dataloader(dataset, batch_size, random)
+
         
-        train_dl = utils.build_dataloader(self.train_hf_dataset, batch_size, random)
-        val_dl = utils.build_dataloader(self.val_hf_dataset, batch_size, random)
-
-        return train_dl, val_dl 
-
     
-    def _build_hf_dataset(self,df):  
+    def _build_hf_dataset(self, df : pd.DataFrame, has_labels : bool = True):  
 
         start = time.perf_counter()
-        logger.info('building one hf_dataset')
+        logger.info('building hf_dataset')
 
         #encode dataframe as Huggingface dataset 
         hf_dataset = Dataset.from_pandas(df)
 
-        hf_dataset.set_transform(self._batch_transform(self.df_has_labels),output_all_columns=False)    #TODO output_all_columns
+        hf_dataset.set_transform(self._batch_transform(has_labels),output_all_columns=False)    #TODO output_all_columns
 
         end = time.perf_counter()
         logger.info('elapsed time in building hf_dataset : %f',end-start)
@@ -166,7 +189,7 @@ class DataManager:
 
         raise NotImplementedError()
     
-    def _batch_transform(self, label: bool) -> Callable:
+    def _batch_transform(self, has_label) -> Callable:
 
         raise NotImplementedError()
 
@@ -197,7 +220,7 @@ class RecurrentDataManager(DataManager):
         return tokenizer
 
 
-    def _batch_transform(self, label : bool = True):
+    def _batch_transform(self, has_label : bool):
 
         def transform_with_label(batch):
 
@@ -230,9 +253,11 @@ class RecurrentDataManager(DataManager):
                 'context_ids': torch.tensor([e.ids for e in context_encodings], device=self.device),
                 'question_ids': torch.tensor([e.ids for e in question_encodings], device=self.device),
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
-                'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device)
+                'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
+                'context_offsets': torch.tensor([e.offsets for e in context_encodings]),
+                'context_text': batch['context'] 
             }
 
             return batch
         
-        return transform_with_label if label else transform_no_label
+        return transform_with_label if has_label else transform_no_label

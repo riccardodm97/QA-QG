@@ -155,7 +155,7 @@ def compute_avg_dict(mode : str, metrics : dict) -> dict :
     
     def cond_mean(value):
         if isinstance(value,list):
-            return np.mean(value).round(2)
-        else : return np.round(value,2)
+            return np.mean(value).round(3)
+        else : return np.round(value,3)
 
     return {prepend_mode(k): cond_mean(v) for k,v in metrics.items()}
