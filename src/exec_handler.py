@@ -37,6 +37,7 @@ class QA_handler :
             GRAD_CLIPPING = 10
             BATCH_SIZE = 32
             RANDOM_BATCH = False
+            LEARNING_RATE = 0.02
 
             #LOG MODEL CONFIGURATION    #TODO farlo meglio in utils 
             wandb.config.hidden_dim = HIDDEN_DIM
@@ -46,10 +47,11 @@ class QA_handler :
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.learning_rate = LEARNING_RATE
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
-            self.optimizer = optim.Adamax(self.model.parameters())
+            self.optimizer = optim.Adamax(self.model.parameters(), lr=LEARNING_RATE)
             self.criterion = nn.CrossEntropyLoss().to(device)
 
             self.run_param = {
