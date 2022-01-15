@@ -12,10 +12,11 @@ TODO GENERIC
 - mettere i seed per randomicità ✔
 - logging (nome della classe all'inizio del messaggio ? formatter ?) ✔
 - wandb ✔
+- to(device) cuda gpu sia tutti i dati che il modello ✔
+- gradient clipping ✔ 
+- lr scheduler 
 - controllare/rimuovere errori 
-- to(device) cuda gpu sia tutti i dati che il modello 
-- gradient clipping e lr scheduler 
-- group answers by id (?)
+- group answers by id 
 - pack_padded_sequence e viceversa 
 - dataloader sort per minimizzare padding 
 - commentare codice 
@@ -51,6 +52,12 @@ DataManager (test, val ?)
 DrQA model 
 
 - rimozione errori 
+
+- migliorie 
+ Glove embeddings: 50 -> 300
+ Dropout LSTM: True -> False
+ Get predictions: Normal -> Joint Probability
+ rimuovere -inf su pad 
 
 
 

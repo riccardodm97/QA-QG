@@ -128,10 +128,20 @@ def get_run_id():
  
 def compute_predictions(starts,ends):    #TODO come calcolarle ? 
 
-    pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
-    pred_start, pred_end = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
+    # pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
+    # s_idx, e_idx = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
 
-    return pred_start, pred_end
+
+    batch_size, c_len = starts.size()
+    ls = nn.LogSoftmax(dim=1)
+    mask = (torch.ones(c_len, c_len) * float('-inf')).to('cuda').tril(-1).unsqueeze(0).expand(batch_size, -1, -1)
+    
+    score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
+    score, s_idx = score.max(dim=1)
+    score, e_idx = score.max(dim=1)
+    s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
+
+    return s_idx, e_idx
 
 
 def compute_avg_dict(mode : str, metrics : dict) -> dict :
