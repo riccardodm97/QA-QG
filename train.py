@@ -63,6 +63,8 @@ def qa_trainer(model_name, dataset, device):
 def main(task : str, model_name : str, dataset : str, log : bool):
 
 
+
+
     if task == 'qg' and model_name == 'DrQA' : 
         raise ValueError('Question Generation task cannot be performed with DrQA model, use BERT as value')
 
@@ -85,7 +87,9 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     wandb.init(config = config, project="squad", entity="qa-qg")
     wandb.run.name = wandb.run.id        #set run name to run id 
 
-    #TODO DISABLE WANDB SISYEM-WISE IF LOG IS FALSE 
+    #TODO DISABLE WANDB SISYEM-WISE IF LOG IS FALSE
+    fake_dict = {'PROVA': 1}
+    wandb.log(fake_dict, step = 1)
 
     if task == 'qa':
         qa_trainer(model_name, dataset, device)
