@@ -27,7 +27,7 @@ def load_embedding_model():
     start = time.perf_counter()
 
     model_name = "glove-wiki-gigaword-{}".format(globals.EMBEDDING_DIMENSION)
-    glove_model_path = os.path.join(globals.DATA_FOLDER, "glove_vectors.txt")
+    glove_model_path = os.path.join(globals.DATA_FOLDER, f"glove_vectors_{globals.EMBEDDING_DIMENSION}.txt")
 
     try:
 
