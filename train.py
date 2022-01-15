@@ -88,8 +88,8 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     wandb.run.name = wandb.run.id        #set run name to run id 
 
     #TODO DISABLE WANDB SISYEM-WISE IF LOG IS FALSE
-    fake_dict = {'PROVA': 1}
-    wandb.log(fake_dict, step = 1)
+    fake_dict = {'PROVA': 1, 'epoch': 1}
+    wandb.log(fake_dict)
 
     if task == 'qa':
         qa_trainer(model_name, dataset, device)

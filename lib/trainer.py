@@ -137,8 +137,8 @@ class QATrainer :
                         epoch+1, v[self.f("val","loss")], v[self.f("val","accuracy")], v[self.f("val","f1")],
                         v[self.f("val","em")], v[self.f("val","mean_start_dist")],
                         v[self.f("val","mean_end_dist")])
-            wandb.log(t, step=epoch)
-            wandb.log(v, step=epoch)
+            wandb.log(t, step=epoch+1)
+            wandb.log(v, step=epoch+1)
 
    
 
