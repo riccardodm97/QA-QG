@@ -111,7 +111,7 @@ class QA_handler :
                 metrics[k].append(v)
         
         end = time.perf_counter()
-        metrics['epoch_time'] = start-end
+        metrics['epoch_time'] = end-start
 
         return utils.compute_avg_dict('train',metrics)
 
@@ -154,7 +154,7 @@ class QA_handler :
                     metrics[k].append(v)
         
         end = time.perf_counter()
-        metrics['epoch_time'] = start-end
+        metrics['epoch_time'] = end-start
 
         return utils.compute_avg_dict('val',metrics)
 
@@ -172,7 +172,7 @@ class QA_handler :
 
             end_time = time.perf_counter()
 
-            logger.info('epoch %d, tot time for train and eval: %f',epoch+1,start_time-end_time)
+            logger.info('epoch %d, tot time for train and eval: %f',epoch+1,end_time-start_time)
             # logger.info('train: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
             #             train_metrics["train/loss"], train_metrics["train/accuracy"],
             #             train_metrics["train/f1"], train_metrics["train/em"], train_metrics["train/mean_start_dist"],

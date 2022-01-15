@@ -61,7 +61,7 @@ def load_embedding_model():
             logger.info('glove model saved to file in data directory')
         
         end = time.perf_counter()
-        logger.info('loading time: %f',start-end)
+        logger.info('loading time: %f',end-start)
 
         return embedding_model, embedding_model.key_to_index
         
@@ -106,7 +106,7 @@ def setup_logging():
     log_path = os.path.join(globals.DATA_FOLDER, "log.txt")
     logger = logging.getLogger(globals.LOG_NAME)
     logger.setLevel(logging.INFO)
-    fileHandler = logging.FileHandler(log_path)
+    fileHandler = logging.FileHandler(log_path, mode='w')
     fileHandler.setLevel(logging.INFO)                     
     formatter = logging.Formatter("%(message)s")
     fileHandler.setFormatter(formatter)

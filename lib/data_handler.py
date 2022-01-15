@@ -103,6 +103,7 @@ class DataManager:
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
         self.df = dataset.df.copy()
+        self.df_has_labels = dataset.has_labels
         self.device = device 
 
         self.tokenizer = self._get_tokenizer()
@@ -153,10 +154,10 @@ class DataManager:
         #encode dataframe as Huggingface dataset 
         hf_dataset = Dataset.from_pandas(df)
 
-        hf_dataset.set_transform(self._batch_transform(),output_all_columns=False)    #TODO output_all_columns
+        hf_dataset.set_transform(self._batch_transform(self.df_has_labels),output_all_columns=False)    #TODO output_all_columns
 
         end = time.perf_counter()
-        logger.info('elapsed time in building hf_dataset : %f',start-end)
+        logger.info('elapsed time in building hf_dataset : %f',end-start)
         
         return hf_dataset
 
@@ -183,7 +184,7 @@ class RecurrentDataManager(DataManager):
         super().__init__(dataset,device)
 
         end = time.perf_counter()
-        logger.info('elapsed time in building DataManager : %f',start-end)
+        logger.info('elapsed time in building DataManager : %f',end-start)
 
 
     def _get_tokenizer(self):
@@ -196,7 +197,7 @@ class RecurrentDataManager(DataManager):
         return tokenizer
 
 
-    def _batch_transform(self, label : bool):
+    def _batch_transform(self, label : bool = True):
 
         def transform_with_label(batch):
 

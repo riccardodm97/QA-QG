@@ -77,8 +77,6 @@ def f1_score(precision, recall):
 def QA_evaluate(data : dict) -> dict:
 
     #TODO assert che tutte le liste che sono valori del dizionario data abbiano la stessa lunghezza
-    start = time.perf_counter()
-
     m = defaultdict(list)
 
     Record = namedtuple('Record', data.keys())
@@ -107,9 +105,6 @@ def QA_evaluate(data : dict) -> dict:
 
     metrics['mean_start_dist'] = start_dist.item()
     metrics['mean_end_dist'] = end_dist.item()
-
-    end = time.perf_counter()
-    logger.info('batch metrics computation: %f',end-start)
 
     return metrics 
 

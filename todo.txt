@@ -21,6 +21,7 @@ TODO GENERIC
 - commentare codice 
 - migliorare performance 
 - rimuovere assunzioni 
+- tutti start e end time come start_time end_time
 
 
 
