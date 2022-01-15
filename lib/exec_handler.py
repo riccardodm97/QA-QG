@@ -186,11 +186,3 @@ class QA_handler :
             wandb.log(val_metrics)
         
             #TODO save model somewhere 
-
-    
-
-
-
-        
-        
-
