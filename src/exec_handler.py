@@ -168,22 +168,22 @@ class QA_handler :
             logger.info('starting epoch %d',epoch+1)
             start_time = time.perf_counter()
 
-            #train_metrics = self.train_loop(train_dataloader)
+            train_metrics = self.train_loop(train_dataloader)
             val_metrics = self.val_loop(val_dataloader)
 
             end_time = time.perf_counter()
 
             logger.info('epoch %d, tot time for train and eval: %f',epoch+1,end_time-start_time)
-            # logger.info('train: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
-            #             train_metrics["train/loss"], train_metrics["train/accuracy"],
-            #             train_metrics["train/f1"], train_metrics["train/em"], train_metrics["train/mean_start_dist"],
-            #             train_metrics["train/mean_end_dist"])
+            logger.info('train: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
+                        train_metrics["train/loss"], train_metrics["train/accuracy"],
+                        train_metrics["train/f1"], train_metrics["train/em"], train_metrics["train/mean_start_dist"],
+                        train_metrics["train/mean_end_dist"])
             logger.info('val: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
                         val_metrics["val/loss"], val_metrics["val/accuracy"], val_metrics["val/f1"],
                         val_metrics["val/em"], val_metrics["val/mean_start_dist"],
                         val_metrics["val/mean_end_dist"])
 
-            #wandb.log(train_metrics)
+            wandb.log(train_metrics)
             wandb.log(val_metrics)
         
             #TODO save model somewhere 
