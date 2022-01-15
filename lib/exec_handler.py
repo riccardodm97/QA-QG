@@ -64,7 +64,7 @@ class QA_handler :
     
     def train_loop(self, iterator):
 
-        start = time.perf_counter()
+        start_time = time.perf_counter()
         metrics = defaultdict(list)
 
         self.model.train()
@@ -110,15 +110,15 @@ class QA_handler :
             for k,v in batch_metrics.items():
                 metrics[k].append(v)
         
-        end = time.perf_counter()
-        metrics['epoch_time'] = end-start
+        end_time = time.perf_counter()
+        metrics['epoch_time'] = end_time-start_time
 
         return utils.compute_avg_dict('train',metrics)
 
     
     def val_loop(self, iterator):
 
-        start = time.perf_counter()
+        start_time = time.perf_counter()
         metrics = defaultdict(list)
 
         self.model.eval()
@@ -153,8 +153,8 @@ class QA_handler :
                 for k,v in batch_metrics.items():
                     metrics[k].append(v)
         
-        end = time.perf_counter()
-        metrics['epoch_time'] = end-start
+        end_time = time.perf_counter()
+        metrics['epoch_time'] = end_time-start_time
 
         return utils.compute_avg_dict('val',metrics)
 
