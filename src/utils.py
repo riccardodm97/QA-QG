@@ -35,11 +35,11 @@ def load_embedding_model():
         #if already stored in data, retrieve it 
         if os.path.exists(glove_model_path): 
 
-            logger.info('loading embedding vectors from file')
+            logger.info('loading embedding vectors (dim = %s) from file',globals.EMBEDDING_DIMENSION)
             embedding_model = KeyedVectors.load_word2vec_format(glove_model_path, binary=True)
         
         else:
-            logger.info('downloading glove model...')
+            logger.info('downloading glove model (dim = %s)...',globals.EMBEDDING_DIMENSION)
             embedding_model : KeyedVectors = gloader.load(model_name)
             logger.info('glove loaded')
 
