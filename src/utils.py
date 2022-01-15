@@ -40,7 +40,7 @@ def load_embedding_model():
             embedding_model = KeyedVectors.load_word2vec_format(glove_model_path, binary=True)
         
         else:
-            logger.info('downloading glove model (dim = %s)...',globals.EMBEDDING_DIMENSION)
+            logger.info('downloading glove model (dim = %s) ...',globals.EMBEDDING_DIMENSION)
             embedding_model : KeyedVectors = gloader.load(model_name)
             logger.info('glove loaded')
 

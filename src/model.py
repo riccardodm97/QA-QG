@@ -42,12 +42,12 @@ class DrQA(nn.Module):
     
     def forward(self, inputs):   
        
-        context = inputs['context_ids']                     # [bs, len_c]
-        question = inputs['question_ids']                   # [bs, len_q]
-        context_mask = inputs['context_mask']               # [bs, len_c]
-        question_mask = inputs['question_mask']             # [bs, len_q]
-        context_lengths = [x.count(1) for x in context]     # [bs,]
-        question_lengths = [x.count(1) for x in question]   # [bs,]
+        context = inputs['context_ids']                               # [bs, len_c]
+        question = inputs['question_ids']                             # [bs, len_q]
+        context_mask = inputs['context_mask']                         # [bs, len_c]
+        question_mask = inputs['question_mask']                       # [bs, len_q]
+        context_lengths = torch.count_nonzero(context_mask,dim=1)     # [bs]
+        question_lengths = torch.count_nonzero(question_mask,dim=1)   # [bs]
         
         ctx_embed = self.embedding_layer(context)
         # ctx_embed = [bs, len_c, emb_dim]
