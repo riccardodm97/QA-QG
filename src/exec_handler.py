@@ -32,10 +32,11 @@ class QA_handler :
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
-            DROPOUT = 0.1
+            DROPOUT = 0.2
             N_EPOCHS = 15
             GRAD_CLIPPING = 10
             BATCH_SIZE = 32
+            LR = 0.003
             RANDOM_BATCH = False
 
             #LOG MODEL CONFIGURATION    #TODO farlo meglio in utils 
@@ -49,7 +50,7 @@ class QA_handler :
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
-            self.optimizer = optim.Adamax(self.model.parameters(), lr=0.005)
+            self.optimizer = optim.Adamax(self.model.parameters(), lr=LR)
             self.criterion = nn.CrossEntropyLoss().to(device)
 
             self.run_param = {
