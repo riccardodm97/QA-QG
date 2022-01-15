@@ -37,6 +37,15 @@ class QA_handler :
             GRAD_CLIPPING = 10
             BATCH_SIZE = 32
             RANDOM_BATCH = False
+
+            #LOG MODEL CONFIGURATION    #TODO farlo meglio in utils 
+            wandb.config.hidden_dim = HIDDEN_DIM
+            wandb.config.lstm_layer = LSTM_LAYER
+            wandb.config.dropout = DROPOUT
+            wandb.config.n_epochs = N_EPOCHS
+            wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.batch_size = BATCH_SIZE
+            wandb.config.random_batch = RANDOM_BATCH
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
@@ -158,14 +167,25 @@ class QA_handler :
 
             start_time = time.perf_counter()
 
-            train_metrics = self.train_loop(train_dataloader)
+            #train_metrics = self.train_loop(train_dataloader)
             val_metrics = self.val_loop(val_dataloader)
 
             end_time = time.perf_counter()
 
             logger.info('epoch %d, tot time for train and eval: %f',epoch+1,start_time-end_time)
+            # logger.info('train: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
+            #             train_metrics["train/loss"], train_metrics["train/accuracy"],
+            #             train_metrics["train/f1"], train_metrics["train/em"], train_metrics["train/mean_start_dist"],
+            #             train_metrics["train/mean_end_dist"])
+            logger.info('val: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f',
+                        val_metrics["val/loss"], val_metrics["val/accuracy"], val_metrics["val/f1"],
+                        val_metrics["val/em"], val_metrics["val/mean_start_dist"],
+                        val_metrics["val/mean_end_dist"])
+
+            #wandb.log(train_metrics)
+            wandb.log(val_metrics)
         
-        #TODO do something with those metrics as save model somewhere 
+            #TODO save model somewhere 
 
     
 

@@ -10,8 +10,8 @@ TODO GENERIC
 - metriche ✔
 - refactor ✔
 - mettere i seed per randomicità ✔
-- logging (nome della classe all'inizio del messaggio ? formatter ?)
-- wandb 
+- logging (nome della classe all'inizio del messaggio ? formatter ?) ✔
+- wandb ✔
 - controllare/rimuovere errori 
 - to(device) cuda gpu sia tutti i dati che il modello 
 - gradient clipping e lr scheduler 

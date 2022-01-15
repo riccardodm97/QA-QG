@@ -31,7 +31,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     }
 
     wandb.init(config = config, project="squad", entity="qa-qg", mode=mode)
-    wandb.run.name = wandb.run.id        #set run name to run id 
+    wandb.run.name = utils.get_run_id()     #set run name 
 
     logger.info('starting run -> task: %s, model: %s , dataset file: %s, wandb enabled: %s',task,model_name,dataset,str(log))
 

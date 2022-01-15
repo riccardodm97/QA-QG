@@ -3,6 +3,7 @@ import os
 import random 
 import logging
 import time 
+from datetime import datetime
 
 import numpy as np
 import torch 
@@ -107,7 +108,7 @@ def setup_logging():
     logger.setLevel(logging.INFO)
     fileHandler = logging.FileHandler(log_path)
     fileHandler.setLevel(logging.INFO)                     
-    formatter = logging.Formatter("%(name)s: %(message)s")
+    formatter = logging.Formatter("%(message)s")
     fileHandler.setFormatter(formatter)
     logger.addHandler(fileHandler)
 
@@ -119,6 +120,10 @@ def get_device():
     Return a CUDA device, if available, or CPU otherwise
     """
     return torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+
+def get_run_id():
+
+    return datetime.now().strftime("%d/%m/%Y %H:%M:%S") 
 
  
 def compute_predictions(starts,ends):    #TODO come calcolarle ? 
