@@ -15,6 +15,8 @@ from torch.utils.data.sampler import RandomSampler, SequentialSampler, BatchSamp
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
 
+from datetime import datetime
+
 logger = logging.getLogger(globals.LOG_NAME)
 
 def load_embedding_model():
@@ -89,4 +91,8 @@ def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int, device = 'c
         embedding_layer = nn.Embedding.from_pretrained(matrix, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
 
         return embedding_layer, embedding_dim
+
+def get_run_id():
+
+    return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 

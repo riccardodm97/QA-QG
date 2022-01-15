@@ -81,7 +81,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     logger.setLevel(logging.INFO)
     fileHandler = logging.FileHandler(log_path)
     #fileHandler.setLevel(logging.INFO)                      #TODO 
-    formatter = logging.Formatter("%(name)s: %(message)s")
+    formatter = logging.Formatter("{}: %(message)s".format(__name__))
     fileHandler.setFormatter(formatter)
     logger.addHandler(fileHandler)
 
@@ -95,8 +95,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
         'dataset_file': dataset
     }
     wandb.init(config = config, project="squad", entity="qa-qg")
-    date_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")    # datetime object containing current date and time
-    wandb.run.name = f"{date_time}"  #set run name to run id 
+    wandb.run.name = utils.get_run_id()  #set run name to run id 
 
     #TODO DISABLE WANDB SISYEM-WISE IF LOG IS FALSE 
 
