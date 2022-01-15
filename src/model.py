@@ -1,8 +1,8 @@
 import torch
 from torch import nn 
 
-import lib.layer as layer 
-from lib.utils import get_embedding_layer
+import src.layer as layer 
+from src.utils import get_embedding_layer
 
 class DrQA(nn.Module):
     

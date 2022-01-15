@@ -1,5 +1,6 @@
 
 import os
+import sys
 import random 
 import logging
 import time 
@@ -14,7 +15,7 @@ import torch.nn.functional as F
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
 
-import lib.globals as globals 
+import src.globals as globals 
 
 
 logger = logging.getLogger(globals.LOG_NAME)
@@ -106,11 +107,13 @@ def setup_logging():
     log_path = os.path.join(globals.DATA_FOLDER, "log.txt")
     logger = logging.getLogger(globals.LOG_NAME)
     logger.setLevel(logging.INFO)
-    fileHandler = logging.FileHandler(log_path) #, mode='w')
-    fileHandler.setLevel(logging.INFO)                     
+    fileHandler = logging.FileHandler(log_path, mode='w')
+    consoleHandler = logging.StreamHandler(sys.stdout) 
     formatter = logging.Formatter("%(message)s")
     fileHandler.setFormatter(formatter)
+    consoleHandler.setFormatter(formatter)
     logger.addHandler(fileHandler)
+    logger.addHandler(consoleHandler)
 
     return logger 
 

@@ -9,11 +9,11 @@ import torch.optim as optim
 import torch.nn as nn 
 import wandb
 
-from lib.data_handler import RawSquadDataset, DataManager, RecurrentDataManager
-import lib.model as models
-import  lib.globals as globals
-import lib.utils as utils 
-from lib.evaluate import QA_evaluate
+from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager
+import src.model as models
+import  src.globals as globals
+import src.utils as utils 
+from src.evaluate import QA_evaluate
 
 
 logger = logging.getLogger(globals.LOG_NAME)

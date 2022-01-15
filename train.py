@@ -3,8 +3,8 @@ import wandb
 
 from argparse import ArgumentParser
 
-import lib.utils as utils 
-import lib.exec_handler as exec
+import src.utils as utils 
+import src.exec_handler as exec
 
 
 def main(task : str, model_name : str, dataset : str, log : bool):

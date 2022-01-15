@@ -18,8 +18,8 @@ from tokenizers.pre_tokenizers import Sequence as PreSequence
 from tokenizers.pre_tokenizers import Whitespace
 from datasets import Dataset 
 
-import lib.globals as globals
-import lib.utils as utils 
+import src.globals as globals
+import src.utils as utils 
 
 logger = logging.getLogger(globals.LOG_NAME)
 

@@ -13,7 +13,7 @@ from collections import namedtuple, OrderedDict, Counter, defaultdict
 import torch
 import numpy as np 
 
-import lib.globals as globals
+import src.globals as globals
 
 logger = logging.getLogger(globals.LOG_NAME)
 
