@@ -2,6 +2,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class AlignQuestionEmbedding(nn.Module):
     
@@ -73,7 +74,7 @@ class StackedBiLSTM(nn.Module):
                                       batch_first=True, bidirectional=True))
            
     
-    def forward(self, x):
+    def forward(self, x, seq_len):
         # x = [bs, seq_len, feature_dim]
 
         outputs = [x]
@@ -81,9 +82,11 @@ class StackedBiLSTM(nn.Module):
 
             lstm_input = outputs[-1]
             lstm_input = F.dropout(lstm_input, p=self.dropout)
-            lstm_out, _ = self.lstms[i](lstm_input)
+            lstm_input_packed = pack_padded_sequence(lstm_input, seq_len, batch_first=True, enforce_sorted=False)
+            lstm_out, _ = self.lstms[i](lstm_input_packed)
+            lstm_out_padded, out_lengths = pad_packed_sequence(lstm_out, batch_first=True) # [bs, seq_len, hidden_dim * 2]
            
-            outputs.append(lstm_out)
+            outputs.append(lstm_out_padded)
 
     
         output = torch.cat(outputs[1:], dim=2)

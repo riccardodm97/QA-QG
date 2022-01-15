@@ -42,10 +42,12 @@ class DrQA(nn.Module):
     
     def forward(self, inputs):   
        
-        context = inputs['context_ids']              # [bs, len_c]
-        question = inputs['question_ids']            # [bs, len_q]
-        context_mask = inputs['context_mask']        # [bs, len_c]
-        question_mask = inputs['question_mask']      # [bs, len_q]
+        context = inputs['context_ids']                     # [bs, len_c]
+        question = inputs['question_ids']                   # [bs, len_q]
+        context_mask = inputs['context_mask']               # [bs, len_c]
+        question_mask = inputs['question_mask']             # [bs, len_q]
+        context_lengths = [x.count(1) for x in context]     # [bs,]
+        question_lengths = [x.count(1) for x in question]   # [bs,]
         
         ctx_embed = self.embedding_layer(context)
         # ctx_embed = [bs, len_c, emb_dim]
@@ -63,10 +65,10 @@ class DrQA(nn.Module):
         ctx_bilstm_input = torch.cat([ctx_embed, align_embed], dim=2)
         # ctx_bilstm_input = [bs, len_c, emb_dim*2]
                 
-        ctx_outputs = self.context_bilstm(ctx_bilstm_input)
+        ctx_outputs = self.context_bilstm(ctx_bilstm_input, context_lengths)
         # ctx_outputs = [bs, len_c, hid_dim*layers*dir] = [bs, len_c, hid_dim*6]
        
-        qtn_outputs = self.question_bilstm(ques_embed)
+        qtn_outputs = self.question_bilstm(ques_embed, question_lengths)
         # qtn_outputs = [bs, len_q, hid_dim*6]
     
         qtn_weights = self.linear_attn_question(qtn_outputs, question_mask)
