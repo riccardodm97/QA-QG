@@ -30,13 +30,22 @@ def qa_trainer(model_name, dataset, device):
 
         HIDDEN_DIM = 128
         LSTM_LAYER = 3
-        DROPUT = 0.3
+        DROPOUT = 0.3
         N_EPOCHS = 15
         GRAD_CLIPPING = 10
         BATCH_SIZE = 32
         RANDOM_BATCH = False
+
+        #LOG MODEL CONFIGURATION
+        wandb.config.hidden_dim = HIDDEN_DIM
+        wandb.config.lstm_layer = LSTM_LAYER
+        wandb.config.dropout = DROPOUT
+        wandb.config.n_epochs = N_EPOCHS
+        wandb.config.grad_clipping = GRAD_CLIPPING
+        wandb.config.batch_size = BATCH_SIZE
+        wandb.config.random_batch = RANDOM_BATCH
         
-        model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPUT,data_manager.emb_model.vectors,data_manager.vocab[globals.PAD_TOKEN],device)
+        model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,data_manager.emb_model.vectors,data_manager.vocab[globals.PAD_TOKEN],device)
 
         optimizer = optim.Adamax(model.parameters())
         criterion = nn.CrossEntropyLoss().to(device)
@@ -80,7 +89,10 @@ def main(task : str, model_name : str, dataset : str, log : bool):
 
     #setup wandb 
     config = {
-
+        'device': device,
+        'task': task,
+        'model_name': model_name,
+        'dataset_file': dataset
     }
     wandb.init(config = config, project="squad", entity="qa-qg")
     wandb.run.name = wandb.run.id        #set run name to run id 
