@@ -165,6 +165,7 @@ class QA_handler :
 
         for epoch in range(self.run_param['n_epochs']):
 
+            logger.info('starting epoch %d',epoch+1)
             start_time = time.perf_counter()
 
             train_metrics = self.train_loop(train_dataloader)
