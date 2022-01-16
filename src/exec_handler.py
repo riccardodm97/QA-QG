@@ -13,7 +13,7 @@ import src.model as models
 import  src.globals as globals
 import src.utils as utils 
 from src.evaluate import QA_evaluate
-
+from tqdm import tqdm
 
 logger = logging.getLogger(globals.LOG_NAME)
 
@@ -71,7 +71,7 @@ class QA_handler :
 
         self.model.train()
 
-        for batch_id, batch in enumerate(iterator):
+        for batch_id, batch in tqdm(enumerate(iterator)):
 
             #zero the gradients 
             self.model.zero_grad(set_to_none=True)
@@ -127,7 +127,7 @@ class QA_handler :
 
         with torch.no_grad():
             
-            for batch_id, batch in enumerate(iterator):
+            for batch_id, batch in tqdm(enumerate(iterator)):
 
                 pred_start_raw, pred_end_raw = self.model(batch)
 
