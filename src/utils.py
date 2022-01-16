@@ -138,7 +138,7 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
 
     batch_size, c_len = starts.size()
     ls = nn.LogSoftmax(dim=1)
-    mask = (torch.ones(c_len, c_len) * float('-inf')).to('cuda').tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    #TODO do not hardcode 'cuda' 
+    mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
     
     score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
     score, s_idx = score.max(dim=1)
