@@ -30,7 +30,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     logger.info('starting run -> task: %s, model: %s , dataset file: %s, wandb enabled: %s',task,model_name,dataset,str(log))
 
     if task == 'qa':
-        run_handler = exec.QA_handler(model_name, dataset, device, logging = mode, config = config)
+        run_handler = exec.QA_handler(model_name, dataset, device, config = config)
         sweep_id = wandb.sweep(sweep_config, project="squad-sweep", entity="qa-qg")
         wandb.agent(sweep_id, function=run_handler.train_and_eval(), count= 15 )
 
