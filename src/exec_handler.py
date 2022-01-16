@@ -31,11 +31,11 @@ class QA_handler :
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
-            DROPOUT = 0.4
+            DROPOUT = 0.1
             N_EPOCHS = 10
             GRAD_CLIPPING = 10
-            BATCH_SIZE = 128
-            LR = 0.002
+            BATCH_SIZE = 64
+            LR = 0.001
             RANDOM_BATCH = False
 
             #log model configuration   
@@ -51,8 +51,10 @@ class QA_handler :
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
-            self.optimizer = optim.Adamax(self.model.parameters(), lr=LR)
+            self.optimizer = optim.Adam(self.model.parameters(), lr=LR)
             self.criterion = nn.CrossEntropyLoss().to(device)
+
+            wandb.watch(self.model,self.criterion)
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -71,7 +73,7 @@ class QA_handler :
 
         self.model.train()
 
-        for batch_id, batch in tqdm(enumerate(iterator)):
+        for batch in tqdm(iterator):
 
             #zero the gradients 
             self.model.zero_grad(set_to_none=True)
@@ -127,7 +129,7 @@ class QA_handler :
 
         with torch.no_grad():
             
-            for batch_id, batch in tqdm(enumerate(iterator)):
+            for batch in tqdm(iterator):
 
                 pred_start_raw, pred_end_raw = self.model(batch)
 
