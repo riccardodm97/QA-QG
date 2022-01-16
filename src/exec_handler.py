@@ -1,9 +1,7 @@
-
 import os
 import logging
 import time 
 from collections import OrderedDict, defaultdict
-from pandas import lreshape
 
 import torch
 import torch.optim as optim
@@ -39,18 +37,17 @@ class QA_handler :
             BATCH_SIZE = 32
             LR = 0.002
             RANDOM_BATCH = False
-            LEARNING_RATE = 0.02
 
-            #LOG MODEL CONFIGURATION    #TODO farlo meglio in utils 
+            #log model configuration   
             wandb.config.hidden_dim = HIDDEN_DIM
             wandb.config.lstm_layer = LSTM_LAYER
             wandb.config.dropout = DROPOUT
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
-            wandb.config.lr = LR
+            wandb.config.learning_rate = LR
             wandb.config.random_batch = RANDOM_BATCH
-            wandb.config.learning_rate = LEARNING_RATE
+            
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
