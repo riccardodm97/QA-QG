@@ -158,9 +158,9 @@ class QuestionEncodingLayer(nn.Module):
     
     def forward(self, qst_embed, qst_mask, qst_lengths):
         
-        attention_weights = self.linear_self_attention(qst_embed=qst_embed, qst_mask=qst_mask) 
+        attention_weights = self.linear_self_attention(qst_embed, qst_mask) 
         # attention_weights = [batch_size, qst_len]
-        lstm_outputs = self.stacked_bilstms_layer(input_embedded=qst_embed, sequence_lengths=qst_lengths)
+        lstm_outputs = self.stacked_bilstms_layer(qst_embed, qst_lengths)
         # lstm_outputs: [batch_size, qst_len, hidden_size * n_layers * 2]
 
         return torch.bmm(attention_weights.unsqueeze(1), lstm_outputs).squeeze(1)
