@@ -1,5 +1,3 @@
-
-from cgi import test
 import json
 import os
 import logging 
