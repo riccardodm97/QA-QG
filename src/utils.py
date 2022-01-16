@@ -26,7 +26,7 @@ def load_embedding_model():
     Loads a pre-trained word embedding model via gensim library
 
     """
-    start = time.perf_counter()
+    start_time = time.perf_counter()
 
     model_name = "glove-wiki-gigaword-{}".format(globals.EMBEDDING_DIMENSION)
     glove_model_path = os.path.join(globals.DATA_FOLDER, f"glove_vectors_{globals.EMBEDDING_DIMENSION}.txt")
@@ -62,8 +62,8 @@ def load_embedding_model():
             embedding_model.save_word2vec_format(glove_model_path, binary=True)
             logger.info('glove model saved to file in data directory')
         
-        end = time.perf_counter()
-        logger.info('loading time: %f',end-start)
+        end_time = time.perf_counter()
+        logger.info('loading time: %f',end_time-start_time)
 
         return embedding_model, embedding_model.key_to_index
         

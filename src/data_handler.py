@@ -157,7 +157,7 @@ class DataManager:
     
     def _build_hf_dataset(self, df : pd.DataFrame, has_labels : bool = True):  
 
-        start = time.perf_counter()
+        start_time = time.perf_counter()
         logger.info('building hf_dataset')
 
         #encode dataframe as Huggingface dataset 
@@ -165,8 +165,8 @@ class DataManager:
 
         hf_dataset.set_transform(self._batch_transform(has_labels),output_all_columns=False)    #TODO output_all_columns
 
-        end = time.perf_counter()
-        logger.info('elapsed time in building hf_dataset : %f',end-start)
+        end_time = time.perf_counter()
+        logger.info('elapsed time in building hf_dataset : %f',end_time-start_time)
         
         return hf_dataset
 
@@ -186,14 +186,14 @@ class RecurrentDataManager(DataManager):
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
-        start = time.perf_counter()
+        start_time = time.perf_counter()
         logger.info('init RecurrentDataManager')
 
         self.emb_model, self.vocab = utils.load_embedding_model()    #loading embedding model first since it's needed for the tokenizer 
         super().__init__(dataset,device)
 
-        end = time.perf_counter()
-        logger.info('elapsed time in building DataManager : %f',end-start)
+        end_time = time.perf_counter()
+        logger.info('elapsed time in building DataManager : %f',end_time-start_time)
 
 
     def _get_tokenizer(self):
