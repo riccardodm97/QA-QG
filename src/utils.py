@@ -171,7 +171,7 @@ def retrieve_configs(device, model_name, dataset):
             "method": "random",
             "metric": {
                 "name": "f1",
-                "goal": "maximise"
+                "goal": "maximize"
             },
             "parameters": {
                 "device": {
