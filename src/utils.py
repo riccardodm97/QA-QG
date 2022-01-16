@@ -152,6 +152,18 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
 
 def retrieve_configs(device, model_name, dataset):
     if model_name == 'DrQA' :
+
+        default_config = {
+            "hidden_dim": 128,
+            "n_epochs": 15,
+            "lstm_layer" : 3,
+            "random_batch": False,
+            "learning_rate": 0.01,
+            "dropout": 0.3,
+            "batch_size": 32,
+            "grad_clipping": 10
+        }
+
         sweep_config = {
             "method": "random",
             "metric": {
@@ -181,7 +193,7 @@ def retrieve_configs(device, model_name, dataset):
                     "value": [True, False]
                 },
                 "learning_rate": {
-                    "values": [0.01, 0.02, 0.03]
+                    "values": [ 0.02, 0.03]
                 },
                 "dropout": {
                     "values": [0.1, 0.2, 0.3, 0.4]
@@ -194,7 +206,7 @@ def retrieve_configs(device, model_name, dataset):
                 }
             }
         }
-        return sweep_config
+        return default_config,sweep_config
         
     elif model_name == 'BERT' :
             raise NotImplementedError()

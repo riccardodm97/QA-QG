@@ -22,9 +22,9 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     device = utils.get_device() 
 
     #setup wandb 
-    sweep_config = utils.retrieve_configs(device, model_name, dataset)
+    default_config, sweep_config = utils.retrieve_configs(device, model_name, dataset)
     mode = None if log else 'disabled'
-    wandb.init()
+    wandb.init(config = default_config, project="squad-sweep", entity="qa-qg", mode=mode)
     wandb.run.name = utils.get_run_id()     #set run name
     config = wandb.config
     logger.info('starting run -> task: %s, model: %s , dataset file: %s, wandb enabled: %s',task,model_name,dataset,str(log))
