@@ -15,14 +15,14 @@ class DrQA(nn.Module):
         
         self.embedding_layer, self.embedding_dim = get_embedding_layer(weights_matrix, pad_idx, device)
 
-        self.question_bilstm = layer.StackedBiLSTM(self.embedding_dim, hidden_dim, num_layers, dropout)
-        self.linear_attn_question = layer.LinearAttentionLayer(hidden_dim*num_layers*self.num_directions) 
+        # self.question_bilstm = layer.StackedBiLSTM(self.embedding_dim, hidden_dim, num_layers, dropout)
+        # self.linear_attn_question = layer.LinearAttentionLayer(hidden_dim*num_layers*self.num_directions) 
 
         self.context_bilstm = layer.StackedBiLSTM(self.embedding_dim * 2, hidden_dim, num_layers, dropout)
         
         self.align_embedding = layer.AlignQuestionEmbedding(self.embedding_dim)
         
-        # self.question_encoding = layer.QuestionEncodingLayer(self.embedding_dim,hidden_dim,num_layers,dropout)
+        self.question_encoding = layer.QuestionEncodingLayer(self.embedding_dim,hidden_dim,num_layers,dropout)
         
         self.bilinear_attn_start = layer.BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions, hidden_dim*num_layers*self.num_directions)
         
@@ -61,17 +61,17 @@ class DrQA(nn.Module):
         ctx_encoded = self.context_bilstm(ctx_bilstm_input, context_lengths)
         # ctx_outputs = [bs, len_c, hid_dim*layers*dir] = [bs, len_c, hid_dim*6]
        
-        qst_outputs = self.question_bilstm(qst_embed, question_lengths)
-        # qtn_outputs = [bs, len_q, hid_dim*6]
+        # qst_outputs = self.question_bilstm(qst_embed, question_lengths)
+        # # qtn_outputs = [bs, len_q, hid_dim*6]
     
-        qst_weights = self.linear_attn_question(qst_outputs, question_mask)
-        # qtn_weights = [bs, len_q]
+        # qst_weights = self.linear_attn_question(qst_outputs, question_mask)
+        # # qtn_weights = [bs, len_q]
             
-        qst_encoded = layer.LinearAttentionLayer.weighted_average(qst_outputs, qst_weights)
-        # qtn_weighted = [bs, hid_dim*6]
-
-        # qst_encoded = self.question_encoding(qst_embed, question_mask, question_lengths)
+        # qst_encoded = layer.LinearAttentionLayer.weighted_average(qst_outputs, qst_weights)
         # # qtn_weighted = [bs, hid_dim*6]
+
+        qst_encoded = self.question_encoding(qst_embed, question_mask, question_lengths)
+        # qtn_weighted = [bs, hid_dim*6]
 
         start_scores = self.bilinear_attn_start(ctx_encoded, qst_encoded, context_mask)
         # start_scores = [bs, len_c]
