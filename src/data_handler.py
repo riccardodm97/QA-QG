@@ -120,7 +120,7 @@ class DataManager:
             self.val_hf_dataset = self._build_hf_dataset(val_df)
         
         self.test_hf_dataset = None
-        if self.dataset.test_df is  not None:
+        if self.dataset.test_df is not None:
             test_df = self.dataset.test_df
             self.test_hf_dataset = self._build_hf_dataset(test_df, self.dataset.test_has_labels)
     

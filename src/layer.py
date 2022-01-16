@@ -85,7 +85,7 @@ class StackedBiLSTM(nn.Module):
             lstm_input = F.dropout(lstm_input, p=self.dropout)
             lstm_input_packed = pack_padded_sequence(lstm_input, lengths.cpu(), batch_first=True, enforce_sorted=False)
             lstm_out, _ = self.lstms[i](lstm_input_packed)
-            lstm_out_padded, out_lengths = pad_packed_sequence(lstm_out, batch_first=True) # [bs, seq_len, hidden_dim * 2]
+            lstm_out_padded, _ = pad_packed_sequence(lstm_out, batch_first=True) # [bs, seq_len, hidden_dim * 2]
            
             outputs.append(lstm_out_padded)
 
