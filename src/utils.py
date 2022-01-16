@@ -97,6 +97,12 @@ def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int, device = 'c
     _ , embedding_dim = matrix.shape
     embedding_layer = nn.Embedding.from_pretrained(matrix, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
 
+    def tune_embedding(grad, words=1000):
+            grad[words:] = 0
+            return grad
+        
+    embedding_layer.weight.register_hook(tune_embedding)   
+
     return embedding_layer, embedding_dim
 
 
