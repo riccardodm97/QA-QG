@@ -144,7 +144,7 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
 
     batch_size, c_len = starts.size()
     ls = nn.LogSoftmax(dim=1)
-    mask = (torch.ones(c_len, c_len) * float('-inf')).to('cuda').tril(-1).unsqueeze(0).expand(batch_size, -1, -1)
+    mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)
     
     score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
     score, s_idx = score.max(dim=1)
@@ -161,7 +161,7 @@ def compute_avg_dict(mode : str, metrics : dict) -> dict :
     
     def cond_mean(value):
         if isinstance(value,list):
-            return np.mean(value).round(2)
-        else : return np.round(value,2)
+            return np.mean(value).round(3)
+        else : return np.round(value,3)
 
     return {prepend_mode(k): cond_mean(v) for k,v in metrics.items()}
