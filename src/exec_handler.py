@@ -32,11 +32,11 @@ class QA_handler :
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
-            DROPOUT = 0.2
+            DROPOUT = 0.3
             N_EPOCHS = 15
             GRAD_CLIPPING = 10
             BATCH_SIZE = 32
-            LR = 0.003
+            LR = 0.002
             RANDOM_BATCH = False
 
             #LOG MODEL CONFIGURATION    #TODO farlo meglio in utils 
@@ -46,6 +46,7 @@ class QA_handler :
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
+            wandb.config.learning_rate = LR
             wandb.config.random_batch = RANDOM_BATCH
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
