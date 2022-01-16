@@ -20,46 +20,28 @@ logger = logging.getLogger(globals.LOG_NAME)
 
 class QA_handler : 
      
-    def __init__(self,model_name, dataset, device):
+    def __init__(self,model_name, dataset, device, config):
     
         dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
 
         squad_dataset = RawSquadDataset(dataset_path)
-
+        
+        
         if model_name == 'DrQA' : 
 
             self.data_manager : DataManager = RecurrentDataManager(squad_dataset,device)
-
-            HIDDEN_DIM = 128
-            LSTM_LAYER = 3
-            DROPOUT = 0.3
-            N_EPOCHS = 15
-            GRAD_CLIPPING = 10
-            BATCH_SIZE = 32
-            RANDOM_BATCH = False
-            LEARNING_RATE = 0.02
-
-            #LOG MODEL CONFIGURATION    #TODO farlo meglio in utils 
-            wandb.config.hidden_dim = HIDDEN_DIM
-            wandb.config.lstm_layer = LSTM_LAYER
-            wandb.config.dropout = DROPOUT
-            wandb.config.n_epochs = N_EPOCHS
-            wandb.config.grad_clipping = GRAD_CLIPPING
-            wandb.config.batch_size = BATCH_SIZE
-            wandb.config.random_batch = RANDOM_BATCH
-            wandb.config.learning_rate = LEARNING_RATE
             
-            self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
+            self.model = models.DrQA(config.hidden_dim,config.lstm_layer,config.dropout,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
-            self.optimizer = optim.Adamax(self.model.parameters(), lr=LEARNING_RATE)
+            self.optimizer = optim.Adamax(self.model.parameters(), lr=config.learning_rate)
             self.criterion = nn.CrossEntropyLoss().to(device)
 
             self.run_param = {
-                'n_epochs' : N_EPOCHS,
-                'grad_clipping' : GRAD_CLIPPING
+                'n_epochs' : config.n_epochs,
+                'grad_clipping' : config.grad_clipping
             }
     
-            self.dataloaders = self.data_manager.get_dataloaders(BATCH_SIZE,RANDOM_BATCH)
+            self.dataloaders = self.data_manager.get_dataloaders(config.batch_size,config.random_batch)
         
         elif model_name == 'BERT' :
             raise NotImplementedError()

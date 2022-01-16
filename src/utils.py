@@ -1,4 +1,5 @@
 
+from email.policy import default
 import os
 import sys
 import random 
@@ -15,6 +16,8 @@ import torch.nn.functional as F
 
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
+
+import torch.optim as optim
 
 import src.globals as globals 
 
@@ -146,6 +149,70 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
     s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
 
     return s_idx, e_idx
+
+def retrieve_configs(device, model_name, dataset):
+    if model_name == 'DrQA' :
+        default_config = {
+            "device": device,
+            "model_name": model_name,
+            "dataset": dataset,
+            "hidden_dim": 128,
+            "lstm_layer": 3,
+            "n_epochs": 15,
+            "random_batch": False,
+            "learning_rate": 0.01,
+            "dropout": 0.3,
+            "batch_size": 32,
+            "grad_clipping": 10,
+        }
+
+
+        sweep_config = {
+            "method": "random",
+            "metric": {
+                "name": "f1",
+                "goal": "maximise"
+            },
+            "parameters": {
+                "device": {
+                    "value": device
+                },
+                "model_name": {
+                    "value": model_name
+                },
+                "dataset": {
+                    "value": dataset
+                },
+                "hidden_dim": {
+                    "value": 128
+                },
+                "lstm_layer": {
+                    "value": 3
+                },
+                "n_epochs": {
+                    "value": 15
+                },
+                "random_batch": {
+                    "value": [True, False]
+                },
+                "learning_rate": {
+                    "values": [0.02, 0.03]
+                },
+                "dropout": {
+                    "values": [0.1, 0.2, 0.3, 0.4]
+                },
+                "batch_size": {
+                    "values": [32, 64]
+                },
+                "grad_clipping": {
+                    "values": [1, 10, 100]
+                }
+            }
+        }
+        return default_config, sweep_config
+        
+    elif model_name == 'BERT' :
+            raise NotImplementedError()
 
 
 def compute_avg_dict(mode : str, metrics : dict) -> dict :
