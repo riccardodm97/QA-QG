@@ -3,6 +3,7 @@ import os
 import logging
 import time 
 from collections import OrderedDict, defaultdict
+from pandas import lreshape
 
 import torch
 import torch.optim as optim
@@ -36,6 +37,7 @@ class QA_handler :
             N_EPOCHS = 15
             GRAD_CLIPPING = 10
             BATCH_SIZE = 32
+            LR = 0.002
             RANDOM_BATCH = False
             LEARNING_RATE = 0.02
 
@@ -46,12 +48,13 @@ class QA_handler :
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
+            wandb.config.lr = LR
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.learning_rate = LEARNING_RATE
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
-            self.optimizer = optim.Adamax(self.model.parameters(), lr=LEARNING_RATE)
+            self.optimizer = optim.Adamax(self.model.parameters(), lr=LR)
             self.criterion = nn.CrossEntropyLoss().to(device)
 
             self.run_param = {
@@ -59,7 +62,7 @@ class QA_handler :
                 'grad_clipping' : GRAD_CLIPPING
             }
     
-            self.dataloaders = self.data_manager.get_dataloaders(BATCH_SIZE,RANDOM_BATCH)
+            self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH), 
         
         elif model_name == 'BERT' :
             raise NotImplementedError()
