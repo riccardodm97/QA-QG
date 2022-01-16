@@ -138,6 +138,33 @@ class LinearAttentionLayer(nn.Module):
         
         return w
 
+class QuestionEncodingLayer(nn.Module):
+
+    def __init__(self, embedding_dim, hidden_dim, num_layers, dropout):
+        super().__init__()
+
+        self.embedding_size = embedding_dim
+        self.hidden_size = hidden_dim
+        self.n_layers = num_layers
+        self.stacked_bilstms_layer = StackedBiLSTM(input_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers, dropout=dropout)
+        self.linear = nn.Linear(embedding_dim, 1)
+    
+    def linear_self_attention(self, qst_embed, qst_mask):
+        
+        scores = self.linear(qst_embed).squeeze(-1) 
+        #scores = [batch_size, qst_len]
+        scores = scores.masked_fill(qst_mask == 0, float('-inf'))
+        return F.softmax(scores, dim=-1)
+    
+    def forward(self, qst_embed, qst_mask, qst_lengths):
+        
+        attention_weights = self.linear_self_attention(qst_embed=qst_embed, qst_mask=qst_mask) 
+        # attention_weights = [batch_size, qst_len]
+        lstm_outputs = self.stacked_bilstms_layer(input_embedded=qst_embed, sequence_lengths=qst_lengths)
+        # lstm_outputs: [batch_size, qst_len, hidden_size * n_layers * 2]
+
+        return torch.bmm(attention_weights.unsqueeze(1), lstm_outputs).squeeze(1)
+
 class BilinearAttentionLayer(nn.Module):
     
     def __init__(self, context_dim, question_dim):
