@@ -2,6 +2,8 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
 
 class AlignQuestionEmbedding(nn.Module):
     
@@ -73,7 +75,7 @@ class StackedBiLSTM(nn.Module):
                                       batch_first=True, bidirectional=True))
            
     
-    def forward(self, x):
+    def forward(self, x, lengths):
         # x = [bs, seq_len, feature_dim]
 
         outputs = [x]
@@ -81,9 +83,11 @@ class StackedBiLSTM(nn.Module):
 
             lstm_input = outputs[-1]
             lstm_input = F.dropout(lstm_input, p=self.dropout)
-            lstm_out, _ = self.lstms[i](lstm_input)
+            lstm_input_packed = pack_padded_sequence(lstm_input, lengths.cpu(), batch_first=True, enforce_sorted=False)
+            lstm_out, _ = self.lstms[i](lstm_input_packed)
+            lstm_out_padded, out_lengths = pad_packed_sequence(lstm_out, batch_first=True) # [bs, seq_len, hidden_dim * 2]
            
-            outputs.append(lstm_out)
+            outputs.append(lstm_out_padded)
 
     
         output = torch.cat(outputs[1:], dim=2)
@@ -134,6 +138,33 @@ class LinearAttentionLayer(nn.Module):
         # w = [bs, 1, dim] => [bs, dim]
         
         return w
+
+class QuestionEncodingLayer(nn.Module):
+
+    def __init__(self, embedding_dim, hidden_dim, num_layers, dropout):
+        super().__init__()
+
+        self.embedding_size = embedding_dim
+        self.hidden_size = hidden_dim
+        self.n_layers = num_layers
+        self.stacked_bilstms_layer = StackedBiLSTM(input_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers, dropout=dropout)
+        self.linear = nn.Linear(embedding_dim, 1)
+    
+    def linear_self_attention(self, qst_embed, qst_mask):
+        
+        scores = self.linear(qst_embed).squeeze(-1) 
+        #scores = [batch_size, qst_len]
+        scores = scores.masked_fill(qst_mask == 0, float('-inf'))
+        return F.softmax(scores, dim=-1)
+    
+    def forward(self, qst_embed, qst_mask, qst_lengths):
+        
+        attention_weights = self.linear_self_attention(qst_embed, qst_mask) 
+        # attention_weights = [batch_size, qst_len]
+        lstm_outputs = self.stacked_bilstms_layer(qst_embed, qst_lengths)
+        # lstm_outputs: [batch_size, qst_len, hidden_size * n_layers * 2]
+
+        return torch.bmm(attention_weights.unsqueeze(1), lstm_outputs).squeeze(1)
 
 class BilinearAttentionLayer(nn.Module):
     

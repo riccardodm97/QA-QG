@@ -14,14 +14,14 @@ TODO GENERIC
 - wandb ✔
 - to(device) cuda gpu sia tutti i dati che il modello ✔
 - gradient clipping ✔ 
+- pack_padded_sequence e viceversa  ✔
+- rimuovere assunzioni [2/3]
 - lr scheduler 
 - controllare/rimuovere errori 
 - group answers by id 
-- pack_padded_sequence e viceversa 
 - dataloader sort per minimizzare padding 
 - commentare codice 
 - migliorare performance 
-- rimuovere assunzioni 
 - tutti start e end time come start_time end_time
 
 
