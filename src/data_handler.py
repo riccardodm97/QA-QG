@@ -109,6 +109,8 @@ class DataManager:
         self.dataset = dataset
         self.device = device 
 
+        self.dataset.train_df = utils.remove_errors(self.dataset)
+            
         self.tokenizer = self._get_tokenizer()
 
         self.train_hf_dataset, self.val_hf_dataset = None, None

@@ -6,9 +6,9 @@ sys.path.insert(1, os.getcwd())
 import os 
 import pandas as pd
 
-import lib.utils as utils 
-import lib.globals as globals
-import lib.data_handling as handling
+import src.utils as utils 
+import src.globals as globals
+import src.data_handler as handler
 
 
 from tokenizers import  Tokenizer
@@ -26,9 +26,9 @@ class BuildErrorsDf:
 
         self.error_ids = open(os.path.join(globals.DATA_FOLDER,'error_ids.txt')).read().splitlines()
         self.dataframe_path_to_save = os.path.join(globals.DATA_FOLDER, 'error_df.csv')
-        squad_dataset = handling.RawSquadDataset(dataset_path)
-        self.df = squad_dataset.df.copy()
-        self.hf_dataset = Dataset.from_pandas(squad_dataset.df)
+        squad_dataset = handler.RawSquadDataset(dataset_path)
+        self.df = squad_dataset.train_df.copy()
+        self.hf_dataset = Dataset.from_pandas(squad_dataset.train_df)
         self.model, self.vocab = utils.load_embedding_model()
 
         self.tokenizer = Tokenizer(WordLevel(self.vocab,unk_token=globals.UNK_TOKEN))
