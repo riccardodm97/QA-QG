@@ -22,9 +22,9 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     device = utils.get_device() 
 
     #setup wandb 
-    default_config, sweep_config = utils.retrieve_configs(device, model_name, dataset)
+    sweep_config = utils.retrieve_configs(device, model_name, dataset)
     mode = None if log else 'disabled'
-    wandb.init(config = default_config, project="squad-sweep", entity="qa-qg", mode=mode)
+    wandb.init()
     wandb.run.name = utils.get_run_id()     #set run name
     config = wandb.config
     logger.info('starting run -> task: %s, model: %s , dataset file: %s, wandb enabled: %s',task,model_name,dataset,str(log))
@@ -32,7 +32,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     if task == 'qa':
         run_handler = exec.QA_handler(model_name, dataset, device, config = config)
         sweep_id = wandb.sweep(sweep_config, project="squad-sweep", entity="qa-qg")
-        wandb.agent(sweep_id, function=run_handler.train_and_eval(), count= 15 )
+        wandb.agent(sweep_id, function=run_handler.train_and_eval)
 
     elif task == 'qg':
         raise NotImplementedError()
