@@ -30,7 +30,7 @@ class RawSquadDataset:
 
     def __init__(self, train_dataset_path = None, test_dataset_path = None):
 
-        assert not train_dataset_path and not test_dataset_path, 'No path has been passed'
+        assert train_dataset_path or test_dataset_path, 'No path has been passed'
         
         self.train_dataset_path = train_dataset_path
         self.test_dataset_path = test_dataset_path
@@ -53,10 +53,8 @@ class RawSquadDataset:
 
     
     def _json_to_dataframe(self,from_path):
-
         '''
         Encode the specified dataset stored as json file at 'from_path' as a Pandas Dataframe
-
         '''
 
         dataframe_path = os.path.join(globals.DATA_FOLDER,os.path.splitext(from_path)[0]+'_df.pkl')
@@ -116,13 +114,13 @@ class DataManager:
         self.tokenizer = self._get_tokenizer()
 
         self.train_hf_dataset, self.val_hf_dataset = None, None
-        if self.dataset.train_df :
+        if self.dataset.train_df is not None:
             train_df, val_df = self._train_val_split(self.dataset.train_df) 
             self.train_hf_dataset = self._build_hf_dataset(train_df)
             self.val_hf_dataset = self._build_hf_dataset(val_df)
         
         self.test_hf_dataset = None
-        if self.dataset.test_df :
+        if self.dataset.test_df is  not None:
             test_df = self.dataset.test_df
             self.test_hf_dataset = self._build_hf_dataset(test_df, self.dataset.test_has_labels)
     
@@ -151,16 +149,6 @@ class DataManager:
 
     
     def get_dataloader(self, split : str, batch_size : int, random : bool):
-
-        # if split=='train':
-        #     assert self.train_hf_dataset, 'No train dataset present'
-        #     return utils.build_dataloader(self.train_hf_dataset, batch_size, random)
-        # elif split=='val':
-        #     assert self.val_hf_dataset, 'No val dataset present'
-        #     return utils.build_dataloader(self.val_hf_dataset, batch_size, random)
-        # else :
-        #     assert self.test_hf_dataset, 'No test dataset present'
-        #     return utils.build_dataloader(self.test_hf_dataset, batch_size, random)
 
         dataset = getattr(self,split+'_hf_dataset')
         assert dataset, f'No {split} dataset present'
