@@ -16,8 +16,7 @@ TODO GENERIC
 - gradient clipping ✔ 
 - pack_padded_sequence e viceversa  ✔
 - rimuovere assunzioni [2/3]
-- lr scheduler 
-- controllare/rimuovere errori 
+- controllare/rimuovere errori ✔
 - group answers by id 
 - dataloader sort per minimizzare padding 
 - commentare codice 
@@ -54,10 +53,11 @@ DrQA model
 - rimozione errori 
 
 - migliorie 
- Glove embeddings: 50 -> 300
- Dropout LSTM: True -> False
- Get predictions: Normal -> Joint Probability
+ Glove embeddings: 50 -> 300 ✔
+ Dropout LSTM: True -> False ☒
+ Get predictions: Normal -> Joint Probability ✔
  rimuovere -inf su pad 
+ hidden dim: 128 -> 256 ☒
 
 
 

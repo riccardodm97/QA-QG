@@ -106,5 +106,8 @@ def QA_evaluate(data : dict) -> dict:
     metrics['mean_start_dist'] = start_dist.item()
     metrics['mean_end_dist'] = end_dist.item()
 
+    metrics['numerical_accuracy_start'] = torch.sum(data['pred_start'] == data['true_start'])/(data['true_start'].size(dim=0))
+    metrics['numerical_accuracy_end'] = torch.sum(data['pred_end'] == data['true_end'])/(data['true_end'].size(dim=0))
+
     return metrics 
 
