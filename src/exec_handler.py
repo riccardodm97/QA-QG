@@ -81,10 +81,13 @@ class QA_handler :
 
             true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
-            loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)
+            start_loss = self.criterion(pred_start_raw,true_start) 
+            end_loss = self.criterion(pred_end_raw,true_end)
+
+            total_loss = (start_loss + end_loss) /2       #TODO come calcolarla ? 
 
             #backward pass 
-            loss.backward()
+            total_loss.backward()
             
             # gradient clipping
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ? 
@@ -106,7 +109,7 @@ class QA_handler :
 
             batch_metrics = QA_evaluate(to_eval)
 
-            batch_metrics['loss'] = loss.item()
+            batch_metrics['loss'] = total_loss.item()
             
             #append all values of batch metrics to the corresponid element in metrics 
             for k,v in batch_metrics.items():
@@ -133,7 +136,13 @@ class QA_handler :
 
                 true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
-                loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)       #TODO come calcolarla ? 
+                start_loss = self.criterion(pred_start_raw,true_start) 
+                end_loss = self.criterion(pred_end_raw,true_end)
+
+                total_loss = (start_loss + end_loss) /2
+
+                #backward pass 
+                total_loss.backward()
 
                 pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -149,7 +158,7 @@ class QA_handler :
 
                 batch_metrics = QA_evaluate(to_eval)
 
-                batch_metrics['loss'] = loss.item()
+                batch_metrics['loss'] = total_loss.item()
                 
                 #append all values of batch metrics to the corresponid element in metrics 
                 for k,v in batch_metrics.items():

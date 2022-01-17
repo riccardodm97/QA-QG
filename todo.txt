@@ -17,14 +17,26 @@ TODO GENERIC
 - pack_padded_sequence e viceversa  ✔
 - rimuovere assunzioni [2/3]
 - tutti start e end time come start_time end_time ✔
+- controllare/rimuovere errori ✔ (più o meno)
 - altri modi di calcolare start e end token (joint prob, dksifoua, ecc)
-- loss / 2 
-- controllare/rimuovere errori 
+- modo di calcolare la loss 
+- codice kushalj001 -> dksifoua 
 - group answers by id 
 - dataloader sort per minimizzare padding 
 - commentare codice 
-- migliorare performance 
 
+
+MIGLIORARE 
+- codice kushalj001 -> dksifoua 
+- evaluate evitando padding e special tokens 
+- check padding e special tokens 
+- evaluate facendo tutto insieme 
+- possible answer (mask padding / special tokens / type id) anziche context mask per start e end scores -inf 
+
+
+RIMUOVERE GLI ERRORI :
+- funzione che tokenizza e rimuove quello che vogliamo sia rimosso 
+(bert : rimuovere quelle in cui la risposta sta tra due overflowing encodings )
 
 
 

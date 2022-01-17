@@ -83,7 +83,7 @@ def QA_evaluate(data : dict) -> dict:
     d = [Record(*t) for t in zip(*(data.values()))]   #TODO  RENAME 
 
     for ex in d:
-        pred_start_char = ex.offsets[ex.pred_start][0]
+        pred_start_char = ex.offsets[ex.pred_start][0]    #TODO si può fare con la virgola 
         pred_end_char = ex.offsets[ex.pred_end][1]
 
         pred_text : str = ex.context[pred_start_char:pred_end_char] 
