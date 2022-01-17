@@ -190,7 +190,7 @@ def retrieve_configs(device, model_name, dataset):
                     "value": 15
                 },
                 "random_batch": {
-                    "value": [True, False]
+                    "values": [True, False]
                 },
                 "learning_rate": {
                     "values": [ 0.02, 0.03]
