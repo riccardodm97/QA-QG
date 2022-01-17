@@ -16,13 +16,15 @@ TODO GENERIC
 - gradient clipping ✔ 
 - pack_padded_sequence e viceversa  ✔
 - rimuovere assunzioni [2/3]
-- lr scheduler 
+- tutti start e end time come start_time end_time ✔
+- altri modi di calcolare start e end token (joint prob, dksifoua, ecc)
+- loss / 2 
 - controllare/rimuovere errori 
 - group answers by id 
 - dataloader sort per minimizzare padding 
 - commentare codice 
 - migliorare performance 
-- tutti start e end time come start_time end_time
+
 
 
 
