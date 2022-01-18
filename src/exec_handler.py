@@ -32,12 +32,12 @@ class QA_handler :
 
             self.data_manager : DataManager = RecurrentDataManager(squad_dataset,device)
 
-            HIDDEN_DIM = 64
+            HIDDEN_DIM = 128
             LSTM_LAYER = 3
             DROPOUT = 0.3
             N_EPOCHS = 10
             GRAD_CLIPPING = 10
-            BATCH_SIZE = 512
+            BATCH_SIZE = 32
             LR = 0.002
             RANDOM_BATCH = False
 
@@ -67,7 +67,7 @@ class QA_handler :
             self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
 
         
-            N_EPOCHS = 10
+            N_EPOCHS = 5
             BATCH_SIZE = 8
             LR = 0.001
             RANDOM_BATCH = False
