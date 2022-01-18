@@ -304,13 +304,13 @@ class TransformerDataManager(DataManager):
                 batch['answer'].pop(idx)
 
             batch = {
-                'ids': [e.ids for e in encodings],
-                'mask': [e.attention_mask for e in encodings],
-                'special_tokens_mask':[e.special_tokens_mask for e in encodings],
-                'offsets': [e.offsets for e in encodings], 
-                'type_ids': [e.type_ids for e in encodings],
-                'label_token_start': [e.char_to_token(starts[i],1) for i,e in enumerate(encodings)],
-                'label_token_end': [e.char_to_token(ends[i]-1,1) for i,e in enumerate(encodings)],
+                'ids': torch.tensor([e.ids for e in encodings], device=self.device),
+                'mask': torch.tensor([e.attention_mask for e in encodings], device=self.device),
+                'special_tokens_mask':torch.tensor([e.special_tokens_mask for e in encodings], device=self.device),
+                'offsets': torch.tensor([e.offsets for e in encodings], device=self.device), 
+                'type_ids': torch.tensor([e.type_ids for e in encodings], device=self.device),
+                'label_token_start': torch.tensor([e.char_to_token(starts[i],1) for i,e in enumerate(encodings)], device=self.device),
+                'label_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(encodings)], device=self.device),
                 'context_text': batch['context'],
                 'answer_text': batch['answer']
             }
@@ -323,11 +323,11 @@ class TransformerDataManager(DataManager):
             encodings: list[Encoding] = self.tokenizer.encode_batch(list(zip(batch['question'],batch['context'])))
 
             batch = {
-                'ids': [e.ids for e in encodings],
-                'mask': [e.attention_mask for e in encodings],
-                'special_tokens_mask':[e.special_tokens_mask for e in encodings],
-                'offsets': [e.offsets for e in encodings], 
-                'type_ids': [e.type_ids for e in encodings],
+                'ids': torch.tensor([e.ids for e in encodings], device=self.device),
+                'mask': torch.tensor([e.attention_mask for e in encodings], device=self.device),
+                'special_tokens_mask':torch.tensor([e.special_tokens_mask for e in encodings], device=self.device),
+                'offsets': torch.tensor([e.offsets for e in encodings], device=self.device), 
+                'type_ids': torch.tensor([e.type_ids for e in encodings], device=self.device),
                 'context_text': batch['context'],
             }
 
