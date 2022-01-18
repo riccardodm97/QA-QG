@@ -4,6 +4,8 @@ from torch import nn
 import src.layer as layer 
 from src.utils import get_embedding_layer
 
+from transformers import BertModel
+
 class DrQA(nn.Module):
     
     def __init__(self, hidden_dim, num_layers, dropout, weights_matrix, pad_idx, device):
@@ -81,3 +83,26 @@ class DrQA(nn.Module):
         
       
         return start_scores, end_scores
+
+    
+class Bert(nn.Module):
+
+    def __init__(self,device) :      #TODO qualcos'altro ?
+        super().__init__()
+
+        self.device = device
+
+        self.bert = BertModel.from_pretrained()
+        self.start_token_classifier =  nn.Linear(bert_ouput_dim, 1)
+        self.end_token_classifier =  nn.Linear(bert_output_dim, 1)
+
+        self.to(device)
+    
+
+     def forward(self, inputs):   
+       
+        ids = inputs['ids']                           # [bs, len_text]
+        mask = inputs['mask']                         # [bs, len_text]
+        type_ids = inputs['type_ids']                 # [bs, len_text]
+        special_token_mask = inputs['special_token_mask']                       
+

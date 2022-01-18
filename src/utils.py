@@ -16,6 +16,7 @@ import torch.nn.functional as F
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
 
+from src.data_handler import RawSquadDataset
 import src.globals as globals 
 
 
@@ -165,3 +166,10 @@ def compute_avg_dict(mode : str, metrics : dict) -> dict :
         else : return np.round(value,3)
 
     return {prepend_mode(k): cond_mean(v) for k,v in metrics.items()}
+
+
+def remove_errors(dataset : RawSquadDataset):
+
+    error_ids = open(os.path.join(globals.DATA_FOLDER,'error_ids.txt')).read().splitlines()
+    
+    return dataset.train_df[~dataset.train_df['question_id'].isin(error_ids)]

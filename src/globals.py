@@ -14,3 +14,4 @@ TRAIN_VAL_SPLIT = 80         # percentage of train examples
 RND_SEED = 42 
 
 BERT_MAX_TOKENS = 512
+BERT_PRETRAINED = 'bert-base-uncased'

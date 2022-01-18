@@ -254,7 +254,7 @@ class RecurrentDataManager(DataManager):
 
 class TransformerDataManager(DataManager):
 
-    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,'bert-base-uncased-vocab.txt')
+    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 

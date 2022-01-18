@@ -7,6 +7,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn 
 import wandb
+from tqdm import tqdm
 
 from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager
 import src.model as models
@@ -71,7 +72,7 @@ class QA_handler :
 
         self.model.train()
 
-        for batch_id, batch in enumerate(iterator):
+        for batch in tqdm(iterator):
 
             #zero the gradients 
             self.model.zero_grad(set_to_none=True)
@@ -130,7 +131,7 @@ class QA_handler :
 
         with torch.no_grad():
             
-            for batch_id, batch in enumerate(iterator):
+            for batch in tqdm(iterator):
 
                 pred_start_raw, pred_end_raw = self.model(batch)
 
