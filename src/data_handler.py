@@ -224,7 +224,7 @@ class RecurrentDataManager(DataManager):
                 'question_ids': torch.tensor([e.ids for e in question_encodings], device=self.device),
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
-                'context_offsets': torch.tensor([e.offsets for e in context_encodings]), 
+                'offsets': torch.tensor([e.offsets for e in context_encodings]), 
                 'label_token_start': torch.tensor([e.char_to_token(starts[i]) for i,e in enumerate(context_encodings)], device=self.device),
                 'label_token_end': torch.tensor([e.char_to_token(ends[i]-1) for i,e in enumerate(context_encodings)], device=self.device),
                 'context_text': batch['context'],
@@ -243,7 +243,7 @@ class RecurrentDataManager(DataManager):
                 'question_ids': torch.tensor([e.ids for e in question_encodings], device=self.device),
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
-                'context_offsets': torch.tensor([e.offsets for e in context_encodings]),
+                'offsets': torch.tensor([e.offsets for e in context_encodings]),
                 'context_text': batch['context'] 
             }
 

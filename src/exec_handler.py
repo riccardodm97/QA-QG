@@ -103,8 +103,8 @@ class QA_handler :
                 'pred_end' : pred_end.cpu(),
                 'true_start' : true_start.cpu(),
                 'true_end' : true_end.cpu(),
+                'offsets' : batch['offsets'],
                 'context' : batch['context_text'],
-                'offsets' : batch['context_offsets'],
                 'answer' : batch['answer_text']
                 })
 
@@ -152,8 +152,8 @@ class QA_handler :
                     'pred_end' : pred_end.cpu(),
                     'true_start' : true_start.cpu(),
                     'true_end' : true_end.cpu(),
+                    'offsets' : batch['offsets'],
                     'context' : batch['context_text'],
-                    'offsets' : batch['context_offsets'],
                     'answer' : batch['answer_text']
                     })
 
