@@ -68,8 +68,8 @@ class QA_handler :
 
         
             N_EPOCHS = 5
-            BATCH_SIZE = 8
-            LR = 0.001
+            BATCH_SIZE = 16
+            LR = 5e-5
             RANDOM_BATCH = False
             GRAD_CLIPPING = None
 
@@ -84,7 +84,7 @@ class QA_handler :
             
             self.model = models.BertQA(device)
 
-            self.optimizer = AdamW(self.model.parameters(),lr=LR)
+            self.optimizer = optim.Adam(self.model.parameters(),lr=LR)
             
 
             self.run_param = {
