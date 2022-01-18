@@ -112,10 +112,10 @@ class QA_handler :
 
             true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
-            # start_loss = self.criterion(pred_start_raw,true_start) 
-            # end_loss = self.criterion(pred_end_raw,true_end)
+            start_loss = self.criterion(pred_start_raw,true_start) 
+            end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)  #/2       #TODO come calcolarla ? 
+            total_loss = (start_loss + end_loss) #/2       #TODO come calcolarla ? 
 
             #backward pass 
             total_loss.backward()
@@ -168,13 +168,10 @@ class QA_handler :
 
                 true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
-                # start_loss = self.criterion(pred_start_raw,true_start) 
-                # end_loss = self.criterion(pred_end_raw,true_end)
+                start_loss = self.criterion(pred_start_raw,true_start) 
+                end_loss = self.criterion(pred_end_raw,true_end)
 
-                total_loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end) #/2
-
-                #backward pass 
-                total_loss.backward()
+                total_loss = (start_loss + end_loss) #/2
 
                 pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
