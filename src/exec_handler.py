@@ -35,7 +35,7 @@ class QA_handler :
             N_EPOCHS = 15
             GRAD_CLIPPING = 10
             BATCH_SIZE = 32
-            LR = 0.002
+            LR = 0.001
             RANDOM_BATCH = False
 
             #log model configuration   
