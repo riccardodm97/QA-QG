@@ -115,7 +115,7 @@ class QA_handler :
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = torch.sum(start_loss, end_loss) #/2       #TODO come calcolarla ? 
+            total_loss = torch.add(start_loss, end_loss) #/2       #TODO come calcolarla ? 
 
             #backward pass 
             total_loss.backward()
@@ -171,7 +171,7 @@ class QA_handler :
                 start_loss = self.criterion(pred_start_raw,true_start) 
                 end_loss = self.criterion(pred_end_raw,true_end)
 
-                total_loss = torch.sum(start_loss, end_loss) #/2
+                total_loss = torch.add(start_loss, end_loss) #/2
 
                 #backward pass 
                 total_loss.backward()
