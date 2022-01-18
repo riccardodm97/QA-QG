@@ -5,6 +5,7 @@ import random
 import logging
 import time 
 from datetime import datetime
+import requests
 
 import numpy as np
 import torch 
@@ -173,3 +174,11 @@ def remove_errors(dataset : RawSquadDataset):
     error_ids = open(os.path.join(globals.DATA_FOLDER,'error_ids.txt')).read().splitlines()
     
     return dataset.train_df[~dataset.train_df['question_id'].isin(error_ids)]
+
+
+def load_bert_vocab():
+    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
+
+    response = requests.get("https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt")
+    with open(VOCAB_PATH, mode='wb') as localfile:
+        localfile.write(response.content)
