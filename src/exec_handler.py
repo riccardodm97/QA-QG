@@ -37,7 +37,7 @@ class QA_handler :
             DROPOUT = 0.3
             N_EPOCHS = 10
             GRAD_CLIPPING = 10
-            BATCH_SIZE = 32
+            BATCH_SIZE = 512
             LR = 0.002
             RANDOM_BATCH = False
 
@@ -115,7 +115,7 @@ class QA_handler :
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = (start_loss + end_loss) #/2       #TODO come calcolarla ? 
+            total_loss = torch.sum(start_loss, end_loss) #/2       #TODO come calcolarla ? 
 
             #backward pass 
             total_loss.backward()
@@ -171,7 +171,7 @@ class QA_handler :
                 start_loss = self.criterion(pred_start_raw,true_start) 
                 end_loss = self.criterion(pred_end_raw,true_end)
 
-                total_loss = (start_loss + end_loss) #/2
+                total_loss = torch.sum(start_loss, end_loss) #/2
 
                 #backward pass 
                 total_loss.backward()
