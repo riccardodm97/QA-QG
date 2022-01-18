@@ -9,7 +9,9 @@ import torch.nn as nn
 import wandb
 from tqdm import tqdm
 
-from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager
+from transformers import AdamW
+
+from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
@@ -53,17 +55,45 @@ class QA_handler :
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
             self.optimizer = optim.Adamax(self.model.parameters(), lr=LR)
-            self.criterion = nn.CrossEntropyLoss().to(device)
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
                 'grad_clipping' : GRAD_CLIPPING
             }
     
-            self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH), 
         
         elif model_name == 'BERT' :
-            raise NotImplementedError()
+            
+            self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
+
+        
+            N_EPOCHS = 10
+            BATCH_SIZE = 32
+            LR = 0.001
+            RANDOM_BATCH = False
+            GRAD_CLIPPING = None
+
+            #log model configuration   
+            
+            wandb.config.n_epochs = N_EPOCHS
+            wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.batch_size = BATCH_SIZE
+            wandb.config.learning_rate = LR
+            wandb.config.random_batch = RANDOM_BATCH
+            
+            
+            self.model = models.BertQA(device)
+
+            self.optimizer = AdamW(self.model.parameters(),lr=LR)
+            
+
+            self.run_param = {
+                'n_epochs' : N_EPOCHS,
+                'grad_clipping' : GRAD_CLIPPING
+            }
+    
+        self.criterion = nn.CrossEntropyLoss().to(device)
+        self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH)
     
     def train_loop(self, iterator):
 
@@ -85,13 +115,14 @@ class QA_handler :
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = (start_loss + end_loss) /2       #TODO come calcolarla ? 
+            total_loss = (start_loss + end_loss) #/2       #TODO come calcolarla ? 
 
             #backward pass 
             total_loss.backward()
             
             # gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ? 
+            if self.run_param['grad_clipping'] is not None:
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ? 
 
             #update the gradients
             self.optimizer.step()
@@ -140,7 +171,7 @@ class QA_handler :
                 start_loss = self.criterion(pred_start_raw,true_start) 
                 end_loss = self.criterion(pred_end_raw,true_end)
 
-                total_loss = (start_loss + end_loss) /2
+                total_loss = (start_loss + end_loss) #/2
 
                 #backward pass 
                 total_loss.backward()
