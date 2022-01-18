@@ -7,7 +7,6 @@ from typing import Callable
 
 import numpy as np
 import pandas as pd
-import tokenizers 
 import torch
 
 from tokenizers.implementations.bert_wordpiece import BertWordPieceTokenizer

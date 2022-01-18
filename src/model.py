@@ -104,7 +104,7 @@ class BertQA(nn.Module):
         ids = inputs['ids']                           # [bs, len_text]
         mask = inputs['mask']                         # [bs, len_text]
         type_ids = inputs['type_ids']                 # [bs, len_text]
-        special_token_mask = inputs['special_token_mask']        
+        special_token_mask = inputs['special_tokens_mask']        
         answer_space_mask = type_ids & ~special_token_mask           
 
         bert_outputs = self.bert(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
