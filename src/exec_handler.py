@@ -68,7 +68,7 @@ class QA_handler :
 
         
             N_EPOCHS = 5
-            BATCH_SIZE = 16
+            BATCH_SIZE = 8
             LR = 5e-5
             RANDOM_BATCH = False
             GRAD_CLIPPING = None
