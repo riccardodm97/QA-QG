@@ -71,7 +71,7 @@ class QA_handler :
         
             N_EPOCHS = 5
             BATCH_SIZE = 8
-            LR = 5e-5
+            LR = 2e-5
             EPS = 1e-06
             DROPOUT = 0.2
             WEIGHT_DECAY = 0.01
