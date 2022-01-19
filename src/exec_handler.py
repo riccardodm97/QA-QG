@@ -98,6 +98,9 @@ class QA_handler :
         self.criterion = nn.CrossEntropyLoss().to(device)
         self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH)
         self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=2, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
+
+        wandb.watch(self.model, self.criterion)
+
     
     def train_loop(self, iterator):
 
