@@ -16,12 +16,32 @@ TODO GENERIC
 - gradient clipping ✔ 
 - pack_padded_sequence e viceversa  ✔
 - rimuovere assunzioni [2/3]
-- controllare/rimuovere errori ✔
+- tutti start e end time come start_time end_time ✔
+- controllare/rimuovere errori ✔ (più o meno)
+- fixare l'orario della run di wandb ✔
+- lr_scheduler
+- migliorare bert 
+- altri modi di calcolare start e end token (joint prob, dksifoua, ecc)
+- modo di calcolare la loss 
+- codice kushalj001 -> dksifoua 
 - group answers by id 
 - dataloader sort per minimizzare padding 
 - commentare codice 
-- migliorare performance 
-- tutti start e end time come start_time end_time
+- riordinare utils 
+- riorganizzare data folder 
+
+
+MIGLIORARE 
+- codice kushalj001 -> dksifoua 
+- evaluate evitando padding e special tokens 
+- check padding e special tokens 
+- evaluate facendo tutto insieme 
+- possible answer (mask padding / special tokens / type id) anziche context mask per start e end scores -inf 
+
+
+RIMUOVERE GLI ERRORI :
+- funzione che tokenizza e rimuove quello che vogliamo sia rimosso 
+(bert : rimuovere quelle in cui la risposta sta tra due overflowing encodings )
 
 
 
@@ -53,11 +73,10 @@ DrQA model
 - rimozione errori 
 
 - migliorie 
- Glove embeddings: 50 -> 300 ✔
- Dropout LSTM: True -> False ☒
- Get predictions: Normal -> Joint Probability ✔
+ Glove embeddings: 50 -> 300
+ Dropout LSTM: True -> False
+ Get predictions: Normal -> Joint Probability
  rimuovere -inf su pad 
- hidden dim: 128 -> 256 ☒
 
 
 

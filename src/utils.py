@@ -1,9 +1,12 @@
+
 import os
 import sys
 import random 
 import logging
 import time 
 from datetime import datetime
+import requests
+import pytz 
 
 import numpy as np
 import torch 
@@ -15,8 +18,8 @@ import torch.nn.functional as F
 import gensim.downloader as gloader
 from gensim.models import KeyedVectors
 
-import src.globals as globals 
 from src.data_handler import RawSquadDataset
+import src.globals as globals 
 
 
 logger = logging.getLogger(globals.LOG_NAME)
@@ -26,7 +29,7 @@ def load_embedding_model():
     Loads a pre-trained word embedding model via gensim library
 
     """
-    start = time.perf_counter()
+    start_time = time.perf_counter()
 
     model_name = "glove-wiki-gigaword-{}".format(globals.EMBEDDING_DIMENSION)
     glove_model_path = os.path.join(globals.DATA_FOLDER, f"glove_vectors_{globals.EMBEDDING_DIMENSION}.txt")
@@ -62,8 +65,8 @@ def load_embedding_model():
             embedding_model.save_word2vec_format(glove_model_path, binary=True)
             logger.info('glove model saved to file in data directory')
         
-        end = time.perf_counter()
-        logger.info('loading time: %f',end-start)
+        end_time = time.perf_counter()
+        logger.info('loading time: %f',end_time-start_time)
 
         return embedding_model, embedding_model.key_to_index
         
@@ -133,7 +136,7 @@ def get_device():
 
 def get_run_id():
 
-    return datetime.now().strftime("%d/%m/%Y %H:%M:%S") 
+    return datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
 
  
 def compute_predictions(starts,ends):    #TODO come calcolarle ? 
@@ -166,8 +169,21 @@ def compute_avg_dict(mode : str, metrics : dict) -> dict :
 
     return {prepend_mode(k): cond_mean(v) for k,v in metrics.items()}
 
+
 def remove_errors(dataset : RawSquadDataset):
 
     error_ids = open(os.path.join(globals.DATA_FOLDER,'error_ids.txt')).read().splitlines()
     
     return dataset.train_df[~dataset.train_df['question_id'].isin(error_ids)]
+
+
+def load_bert_vocab():
+
+    logger.info('downloading BERT vocab from huggingface ...')
+    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
+
+    response = requests.get("https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt")
+    with open(VOCAB_PATH, mode='wb') as localfile:
+        localfile.write(response.content)
+
+    logger.info('loaded and stored in data folder')

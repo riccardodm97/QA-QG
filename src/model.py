@@ -1,7 +1,10 @@
 import torch
-from torch import nn 
+from torch import nn
+
+from transformers import BertModel
 
 import src.layer as layer 
+import src.globals as globals 
 from src.utils import get_embedding_layer
 
 class DrQA(nn.Module):
@@ -81,3 +84,46 @@ class DrQA(nn.Module):
         
       
         return start_scores, end_scores
+    
+class BertQA(nn.Module):
+
+    def __init__(self,device) :      #TODO qualcos'altro ?
+        super().__init__()
+
+        self.device = device
+
+        self.bert = BertModel.from_pretrained(globals.BERT_PRETRAINED)
+        self.start_token_classifier =  nn.Linear(self.bert.config.hidden_size, 1)
+        self.end_token_classifier =  nn.Linear(self.bert.config.hidden_size, 1)
+
+        self.to(device)
+    
+
+    def forward(self, inputs):   
+       
+        ids = inputs['ids']                           # [bs, len_text]
+        mask = inputs['mask']                         # [bs, len_text]
+        type_ids = inputs['type_ids']                 # [bs, len_text]
+        special_token_mask = inputs['special_tokens_mask']        
+        answer_space_mask = type_ids & ~special_token_mask           
+
+        bert_outputs = self.bert(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
+
+        sequence_outputs = bert_outputs[0]
+        # [bs, len_txt, hidden_dim]
+
+        start_scores = self.start_token_classifier(sequence_outputs)  
+        end_scores = self.end_token_classifier(sequence_outputs)
+        # [bs, len_txt, 1]
+
+        start_scores = start_scores.squeeze(-1)
+        end_scores = end_scores.squeeze(-1)
+        # [bs, len_txt]
+
+        start_scores = start_scores.masked_fill(answer_space_mask == 0, float('-inf'))
+        end_scores = end_scores.masked_fill(answer_space_mask == 0, float('-inf'))
+
+        return start_scores, end_scores
+
+
+

@@ -6,8 +6,10 @@ import time
 from typing import Callable
 
 import numpy as np
-import pandas as pd 
+import pandas as pd
 import torch
+
+from tokenizers.implementations.bert_wordpiece import BertWordPieceTokenizer
 
 from tokenizers import  Tokenizer, Encoding
 from tokenizers.models import WordLevel
@@ -159,7 +161,7 @@ class DataManager:
     
     def _build_hf_dataset(self, df : pd.DataFrame, has_labels : bool = True):  
 
-        start = time.perf_counter()
+        start_time = time.perf_counter()
         logger.info('building hf_dataset')
 
         #encode dataframe as Huggingface dataset 
@@ -167,8 +169,8 @@ class DataManager:
 
         hf_dataset.set_transform(self._batch_transform(has_labels),output_all_columns=False)    #TODO output_all_columns
 
-        end = time.perf_counter()
-        logger.info('elapsed time in building hf_dataset : %f',end-start)
+        end_time = time.perf_counter()
+        logger.info('elapsed time in building hf_dataset : %f',end_time-start_time)
         
         return hf_dataset
 
@@ -188,14 +190,14 @@ class RecurrentDataManager(DataManager):
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
-        start = time.perf_counter()
+        start_time = time.perf_counter()
         logger.info('init RecurrentDataManager')
 
         self.emb_model, self.vocab = utils.load_embedding_model()    #loading embedding model first since it's needed for the tokenizer 
         super().__init__(dataset,device)
 
-        end = time.perf_counter()
-        logger.info('elapsed time in building DataManager : %f',end-start)
+        end_time = time.perf_counter()
+        logger.info('elapsed time in building DataManager : %f',end_time-start_time)
 
 
     def _get_tokenizer(self):
@@ -223,7 +225,7 @@ class RecurrentDataManager(DataManager):
                 'question_ids': torch.tensor([e.ids for e in question_encodings], device=self.device),
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
-                'context_offsets': torch.tensor([e.offsets for e in context_encodings]), 
+                'offsets': torch.tensor([e.offsets for e in context_encodings]), 
                 'label_token_start': torch.tensor([e.char_to_token(starts[i]) for i,e in enumerate(context_encodings)], device=self.device),
                 'label_token_end': torch.tensor([e.char_to_token(ends[i]-1) for i,e in enumerate(context_encodings)], device=self.device),
                 'context_text': batch['context'],
@@ -242,8 +244,96 @@ class RecurrentDataManager(DataManager):
                 'question_ids': torch.tensor([e.ids for e in question_encodings], device=self.device),
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
-                'context_offsets': torch.tensor([e.offsets for e in context_encodings]),
+                'offsets': torch.tensor([e.offsets for e in context_encodings]),
                 'context_text': batch['context'] 
+            }
+
+            return batch
+        
+        return transform_with_label if has_label else transform_no_label
+
+
+class TransformerDataManager(DataManager):
+
+    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
+
+    def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
+
+        start_time = time.perf_counter()
+        logger.info('init TransformerDataManager')
+
+        super().__init__(dataset,device)
+
+        end_time = time.perf_counter()
+        logger.info('elapsed time in building DataManager : %f',end_time-start_time)
+
+
+    def _get_tokenizer(self):
+
+        if not os.path.exists(self.VOCAB_PATH):
+            utils.load_bert_vocab()
+
+        tokenizer = BertWordPieceTokenizer(self.VOCAB_PATH, lowercase=True)
+        tokenizer.enable_padding(direction="right", pad_type_id=1)
+        tokenizer.enable_truncation(globals.BERT_MAX_TOKENS, strategy='only_second', stride = 25)
+
+        return tokenizer
+
+
+    def _batch_transform(self, has_label : bool):
+
+        def transform_with_label(batch):
+
+            encodings: list[Encoding] = self.tokenizer.encode_batch(list(zip(batch['question'],batch['context'])))
+
+            starts = list(map(lambda x: x[0],batch['label_char']))
+            ends = list(map(lambda x: x[1],batch['label_char']))
+
+            not_replaced = []
+            for i,e in enumerate(encodings) :
+                if e.char_to_token(starts[i],1) is None or e.char_to_token(ends[i]-1,1) is None :
+                    flag = 0
+                    for o in e.overflowing :
+                        if o.char_to_token(starts[i],1) is not None and o.char_to_token(ends[i]-1,1) is not None :
+                            encodings[i] = o
+                            flag = 1
+                            break
+                    if flag==0 :
+                        not_replaced.append(i)
+            
+            for idx in not_replaced:
+                encodings.pop(idx)
+                starts.pop(idx)
+                ends.pop(idx)
+                batch['context'].pop(idx)
+                batch['answer'].pop(idx)
+
+            batch = {
+                'ids': torch.tensor([e.ids for e in encodings], device=self.device),
+                'mask': torch.tensor([e.attention_mask for e in encodings], device=self.device),
+                'special_tokens_mask':torch.tensor([e.special_tokens_mask for e in encodings], device=self.device),
+                'offsets': torch.tensor([e.offsets for e in encodings], device=self.device), 
+                'type_ids': torch.tensor([e.type_ids for e in encodings], device=self.device),
+                'label_token_start': torch.tensor([e.char_to_token(starts[i],1) for i,e in enumerate(encodings)], device=self.device),
+                'label_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(encodings)], device=self.device),
+                'context_text': batch['context'],
+                'answer_text': batch['answer']
+            }
+
+            return batch
+
+        
+        def transform_no_label(batch):
+
+            encodings: list[Encoding] = self.tokenizer.encode_batch(list(zip(batch['question'],batch['context'])))
+
+            batch = {
+                'ids': torch.tensor([e.ids for e in encodings], device=self.device),
+                'mask': torch.tensor([e.attention_mask for e in encodings], device=self.device),
+                'special_tokens_mask':torch.tensor([e.special_tokens_mask for e in encodings], device=self.device),
+                'offsets': torch.tensor([e.offsets for e in encodings], device=self.device), 
+                'type_ids': torch.tensor([e.type_ids for e in encodings], device=self.device),
+                'context_text': batch['context'],
             }
 
             return batch

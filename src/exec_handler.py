@@ -7,8 +7,11 @@ import torch
 import torch.optim as optim
 import torch.nn as nn 
 import wandb
+from tqdm import tqdm
 
-from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager
+from transformers import AdamW, get_scheduler 
+
+from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
@@ -37,6 +40,7 @@ class QA_handler :
             BATCH_SIZE = 32
             LR = 0.001
             RANDOM_BATCH = False
+            LR_SCHEDULER = False
 
             #log model configuration   
             wandb.config.hidden_dim = HIDDEN_DIM
@@ -47,24 +51,56 @@ class QA_handler :
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.lr_scheduler = LR_SCHEDULER
             
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
 
             self.optimizer = optim.Adamax(self.model.parameters(), lr=LR)
-            self.criterion = nn.CrossEntropyLoss().to(device)
 
             wandb.watch(self.model,self.criterion)
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
-                'grad_clipping' : GRAD_CLIPPING
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : LR_SCHEDULER
             }
-    
-            self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH), 
         
         elif model_name == 'BERT' :
-            raise NotImplementedError()
+            
+            self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
+
+        
+            N_EPOCHS = 5
+            BATCH_SIZE = 8
+            LR = 5e-5
+            RANDOM_BATCH = False
+            GRAD_CLIPPING = None
+            LR_SCHEDULER = True
+
+            #log model configuration   
+            wandb.config.n_epochs = N_EPOCHS
+            wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.batch_size = BATCH_SIZE
+            wandb.config.learning_rate = LR
+            wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.lr_scheduler = LR_SCHEDULER
+            
+            
+            self.model = models.BertQA(device)
+
+            self.optimizer = AdamW(self.model.parameters(),lr=LR)
+            
+
+            self.run_param = {
+                'n_epochs' : N_EPOCHS,
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : LR_SCHEDULER
+            }
+    
+        self.criterion = nn.CrossEntropyLoss().to(device)
+        self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH)
+        self.lr_scheduler = get_scheduler("linear", optimizer=self.optimizer, num_warmup_steps=0, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
     
     def train_loop(self, iterator):
 
@@ -83,16 +119,24 @@ class QA_handler :
 
             true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
-            loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)
+            start_loss = self.criterion(pred_start_raw,true_start) 
+            end_loss = self.criterion(pred_end_raw,true_end)
+
+            total_loss = (start_loss + end_loss) #/2       #TODO come calcolarla ? 
 
             #backward pass 
-            loss.backward()
+            total_loss.backward()
             
             # gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ? 
+            if self.run_param['grad_clipping'] is not None:
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ? 
 
             #update the gradients
             self.optimizer.step()
+
+            #update the learning rate
+            if self.run_param['lr_scheduler']:
+                self.lr_scheduler.step()
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -101,14 +145,14 @@ class QA_handler :
                 'pred_end' : pred_end.cpu(),
                 'true_start' : true_start.cpu(),
                 'true_end' : true_end.cpu(),
+                'offsets' : batch['offsets'],
                 'context' : batch['context_text'],
-                'offsets' : batch['context_offsets'],
                 'answer' : batch['answer_text']
                 })
 
             batch_metrics = QA_evaluate(to_eval)
 
-            batch_metrics['loss'] = loss.item()
+            batch_metrics['loss'] = total_loss.item()
             
             #append all values of batch metrics to the corresponid element in metrics 
             for k,v in batch_metrics.items():
@@ -135,7 +179,10 @@ class QA_handler :
 
                 true_start, true_end = batch['label_token_start'], batch['label_token_end']
 
-                loss = self.criterion(pred_start_raw,true_start) + self.criterion(pred_end_raw,true_end)       #TODO come calcolarla ? 
+                start_loss = self.criterion(pred_start_raw,true_start) 
+                end_loss = self.criterion(pred_end_raw,true_end)
+
+                total_loss = (start_loss + end_loss) #/2
 
                 pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -144,14 +191,14 @@ class QA_handler :
                     'pred_end' : pred_end.cpu(),
                     'true_start' : true_start.cpu(),
                     'true_end' : true_end.cpu(),
+                    'offsets' : batch['offsets'],
                     'context' : batch['context_text'],
-                    'offsets' : batch['context_offsets'],
                     'answer' : batch['answer_text']
                     })
 
                 batch_metrics = QA_evaluate(to_eval)
 
-                batch_metrics['loss'] = loss.item()
+                batch_metrics['loss'] = total_loss.item()
                 
                 #append all values of batch metrics to the corresponid element in metrics 
                 for k,v in batch_metrics.items():
