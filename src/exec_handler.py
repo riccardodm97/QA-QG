@@ -69,13 +69,13 @@ class QA_handler :
             self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
 
         
-            N_EPOCHS = 4
+            N_EPOCHS = 5
             BATCH_SIZE = 8
-            LR = 2e-5
-            EPS = 1e-08
+            LR = 5e-5
+            EPS = 1e-06
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 10
+            GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
 
             #log model configuration   
