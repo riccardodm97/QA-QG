@@ -73,7 +73,7 @@ class QA_handler :
             BATCH_SIZE = 8
             LR = 5e-5
             RANDOM_BATCH = False
-            GRAD_CLIPPING = None
+            GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
 
             #log model configuration   
@@ -88,8 +88,7 @@ class QA_handler :
             self.model = models.BertQA(device)
 
             self.optimizer = AdamW(self.model.parameters(),lr=LR)
-            
-
+        
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
                 'grad_clipping' : GRAD_CLIPPING,
@@ -126,8 +125,7 @@ class QA_handler :
             total_loss.backward()
             
             # gradient clipping
-            if self.run_param['grad_clipping'] is not None:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ? 
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ?   
 
             #update the gradients
             self.optimizer.step()
