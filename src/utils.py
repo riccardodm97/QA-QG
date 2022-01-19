@@ -190,12 +190,8 @@ def remove_errors(dataset : RawSquadDataset):
 
 
 def load_bert_vocab():
-
-    logger.info('downloading BERT vocab from huggingface ...')
     VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
 
     response = requests.get("https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt")
     with open(VOCAB_PATH, mode='wb') as localfile:
         localfile.write(response.content)
-
-    logger.info('loaded and stored in data folder')
