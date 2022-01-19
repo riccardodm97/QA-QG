@@ -9,7 +9,7 @@ import torch.nn as nn
 import wandb
 from tqdm import tqdm
 
-from transformers import AdamW, get_scheduler 
+from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 
 from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
 import src.model as models
@@ -98,7 +98,7 @@ class QA_handler :
     
         self.criterion = nn.CrossEntropyLoss().to(device)
         self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH)
-        self.lr_scheduler = get_scheduler("linear", optimizer=self.optimizer, num_warmup_steps=0, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
+        self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=2, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
     
     def train_loop(self, iterator):
 
