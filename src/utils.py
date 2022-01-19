@@ -147,7 +147,7 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
     pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
     s_idx, e_idx = [], []
     for i in range(pred_start_logit.size(0)):
-        probas = torch.outer(pred_start_logit[i], pred_end_logit[i]) # [ctx_len, ctx_len]
+        probas = torch.ger(pred_start_logit[i], pred_end_logit[i]) # [ctx_len, ctx_len]
         _, index = torch.topk(probas.view(-1), k=1)
         s_idx.append(index.tolist()[0] // probas.size(0))
         e_idx.append(index.tolist()[0] % probas.size(1))
