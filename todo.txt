@@ -1,4 +1,4 @@
-TODO GENERIC
+TODO IMPORTANT
 
 - encodare dataset in dataframe ✔
 - creare custom class per data handling ✔
@@ -20,15 +20,20 @@ TODO GENERIC
 - controllare/rimuovere errori ✔ (più o meno)
 - fixare l'orario della run di wandb ✔
 - lr_scheduler ✔
-- migliorare bert 
 - altri modi di calcolare start e end token (joint prob, dksifoua, ecc) ✔
-- modo di calcolare la loss 
-- codice kushalj001 -> dksifoua 
+- modo di calcolare la loss ✔
+- migliorare bert 
 - group answers by id 
-- dataloader sort per minimizzare padding 
 - commentare codice 
+- compute_answers.py 
+
+
+TODO SECONDARY
+- codice kushalj001 -> dksifoua 
+- dataloader sort per minimizzare padding 
 - riordinare utils 
 - riorganizzare data folder 
+- cambiare log strings 
 
 
 MIGLIORARE 
