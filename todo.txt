@@ -26,6 +26,7 @@ TODO IMPORTANT
 - group answers by id 
 - commentare codice 
 - compute_answers.py 
+- rimuovere i #TODO 
 
 
 TODO SECONDARY
