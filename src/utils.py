@@ -141,22 +141,34 @@ def get_run_id():
  
 def compute_predictions(starts,ends):    #TODO come calcolarle ? 
 
-    # pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
-    # s_idx, e_idx = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
+    pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
 
+    probs = torch.einsum('ki,kj->kij',pred_start_logit, pred_end_logit)     # outer multiplication -> [batch_size, context_len, contex_len]
+    upper_diag = torch.triu(probs)      #we take only the upper triangular part since the lower one has ends and starts inverted
 
-    batch_size, c_len = starts.size()
-    ls = nn.LogSoftmax(dim=1)
-    mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
-    
-    score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
-    score, s_idx = score.max(dim=1)
-    score, e_idx = score.max(dim=1)
-    s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
+    maximum_row, _ = torch.max(upper_diag, dim=2)       #maximum values on row
+    maximum_col, _ = torch.max(upper_diag, dim=1)       #maximum values on columns
+
+    s_idx = torch.argmax(maximum_row, dim=1)            #index of maximum value on rows
+    e_idx = torch.argmax(maximum_col, dim=1)            #index of maximum value on columns
 
     return s_idx, e_idx
 
-
+    #another version to compute indices of starts and ends
+    # batch_size, c_len = starts.size()
+    # ls = nn.LogSoftmax(dim=1)
+    # mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
+    # score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
+    # score, s_idx = score.max(dim=1)
+    # score, e_idx = score.max(dim=1)
+    # s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
+    # return s_idx, e_idx
+    #####
+    #another version to compute indices of starts and ends
+    # pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
+    # s_idx, e_idx = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
+    # return s_idx, e_idx
+    
 def compute_avg_dict(mode : str, metrics : dict) -> dict :
 
     def prepend_mode(key : str):
