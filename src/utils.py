@@ -6,6 +6,7 @@ import logging
 import time 
 from datetime import datetime
 import requests
+import pytz 
 
 import numpy as np
 import torch 
@@ -135,7 +136,7 @@ def get_device():
 
 def get_run_id():
 
-    return datetime.now().strftime("%d/%m/%Y %H:%M:%S") 
+    return datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
 
  
 def compute_predictions(starts,ends):    #TODO come calcolarle ? 

@@ -18,12 +18,16 @@ TODO GENERIC
 - rimuovere assunzioni [2/3]
 - tutti start e end time come start_time end_time ✔
 - controllare/rimuovere errori ✔ (più o meno)
+- fixare l'orario della run di wandb 
+- lr_scheduler
+- migliorare bert 
 - altri modi di calcolare start e end token (joint prob, dksifoua, ecc)
 - modo di calcolare la loss 
 - codice kushalj001 -> dksifoua 
 - group answers by id 
 - dataloader sort per minimizzare padding 
 - commentare codice 
+- riordinare utils 
 
 
 MIGLIORARE 

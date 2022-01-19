@@ -268,6 +268,9 @@ class TransformerDataManager(DataManager):
 
     def _get_tokenizer(self):
 
+        if not os.path.exists(self.VOCAB_PATH):
+            utils.load_bert_vocab()
+
         tokenizer = BertWordPieceTokenizer(self.VOCAB_PATH, lowercase=True)
         tokenizer.enable_padding(direction="right", pad_type_id=1)
         tokenizer.enable_truncation(globals.BERT_MAX_TOKENS, strategy='only_second', stride = 25)
