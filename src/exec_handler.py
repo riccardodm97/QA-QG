@@ -9,7 +9,7 @@ import torch.nn as nn
 import wandb
 from tqdm import tqdm
 
-from transformers import AdamW, get_scheduler
+from transformers import AdamW, get_scheduler 
 
 from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
 import src.model as models
@@ -40,6 +40,7 @@ class QA_handler :
             BATCH_SIZE = 32
             LR = 0.002
             RANDOM_BATCH = False
+            LR_SCHEDULER = False
 
             #log model configuration   
             wandb.config.hidden_dim = HIDDEN_DIM
@@ -50,6 +51,7 @@ class QA_handler :
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.lr_scheduler = LR_SCHEDULER
             
             
             self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,self.data_manager.emb_model.vectors,self.data_manager.vocab[globals.PAD_TOKEN],device)
@@ -59,7 +61,7 @@ class QA_handler :
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
                 'grad_clipping' : GRAD_CLIPPING,
-                'lr_scheduler' : False
+                'lr_scheduler' : LR_SCHEDULER
             }
         
         elif model_name == 'BERT' :
@@ -72,6 +74,7 @@ class QA_handler :
             LR = 5e-5
             RANDOM_BATCH = False
             GRAD_CLIPPING = None
+            LR_SCHEDULER = True
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -79,6 +82,7 @@ class QA_handler :
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.lr_scheduler = LR_SCHEDULER
             
             
             self.model = models.BertQA(device)
@@ -89,7 +93,7 @@ class QA_handler :
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
                 'grad_clipping' : GRAD_CLIPPING,
-                'lr_scheduler' : True
+                'lr_scheduler' : LR_SCHEDULER
             }
     
         self.criterion = nn.CrossEntropyLoss().to(device)
