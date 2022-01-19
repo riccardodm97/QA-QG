@@ -69,11 +69,13 @@ class QA_handler :
             self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
 
         
-            N_EPOCHS = 5
+            N_EPOCHS = 4
             BATCH_SIZE = 8
-            LR = 5e-5
+            LR = 2e-5
+            EPS = 1e-08
+            WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 2.0
+            GRAD_CLIPPING = 10
             LR_SCHEDULER = True
 
             #log model configuration   
@@ -81,13 +83,15 @@ class QA_handler :
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
+            wandb.config.epsilon = EPS
+            wandb.config.weight_decay = WEIGHT_DECAY
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.lr_scheduler = LR_SCHEDULER
             
             
             self.model = models.BertQA(device)
 
-            self.optimizer = AdamW(self.model.parameters(),lr=LR)
+            self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
