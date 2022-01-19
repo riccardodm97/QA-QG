@@ -144,17 +144,26 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
     # pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
     # s_idx, e_idx = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
 
-
-    batch_size, c_len = starts.size()
-    ls = nn.LogSoftmax(dim=1)
-    mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
-    
-    score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
-    score, s_idx = score.max(dim=1)
-    score, e_idx = score.max(dim=1)
-    s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
-
+    pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
+    s_idx, e_idx = [], []
+    for i in range(pred_start_logit.size(0)):
+        probas = torch.outer(pred_start_logit[i], pred_end_logit[i]) # [ctx_len, ctx_len]
+        _, index = torch.topk(probas.view(-1), k=1)
+        s_idx.append(index.tolist()[0] // probas.size(0))
+        e_idx.append(index.tolist()[0] % probas.size(1))
     return s_idx, e_idx
+
+
+    # batch_size, c_len = starts.size()
+    # ls = nn.LogSoftmax(dim=1)
+    # mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
+    
+    # score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
+    # score, s_idx = score.max(dim=1)
+    # score, e_idx = score.max(dim=1)
+    # s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
+
+    # return s_idx, e_idx
 
 
 def compute_avg_dict(mode : str, metrics : dict) -> dict :
