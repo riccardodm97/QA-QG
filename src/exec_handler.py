@@ -71,7 +71,7 @@ class QA_handler :
             self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
 
         
-            N_EPOCHS = 5
+            N_EPOCHS = 4
             BATCH_SIZE = 8
             LR = 5e-5
             RANDOM_BATCH = False
