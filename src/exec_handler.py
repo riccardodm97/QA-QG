@@ -78,7 +78,7 @@ class QA_handler :
             RANDOM_BATCH = False
             GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
-            WARMUP = 2
+            WARMUP = 2000
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
