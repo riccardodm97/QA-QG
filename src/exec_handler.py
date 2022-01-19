@@ -9,7 +9,7 @@ import torch.nn as nn
 import wandb
 from tqdm import tqdm
 
-from transformers import AdamW
+from transformers import AdamW, get_scheduler
 
 from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
 import src.model as models
@@ -58,9 +58,9 @@ class QA_handler :
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
-                'grad_clipping' : GRAD_CLIPPING
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : False
             }
-    
         
         elif model_name == 'BERT' :
             
@@ -74,7 +74,6 @@ class QA_handler :
             GRAD_CLIPPING = None
 
             #log model configuration   
-            
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
@@ -84,16 +83,18 @@ class QA_handler :
             
             self.model = models.BertQA(device)
 
-            self.optimizer = optim.Adam(self.model.parameters(),lr=LR)
+            self.optimizer = AdamW(self.model.parameters(),lr=LR)
             
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
-                'grad_clipping' : GRAD_CLIPPING
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : True
             }
     
         self.criterion = nn.CrossEntropyLoss().to(device)
         self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH)
+        self.lr_scheduler = get_scheduler("linear", optimizer=self.optimizer, num_warmup_steps=0, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
     
     def train_loop(self, iterator):
 
@@ -126,6 +127,10 @@ class QA_handler :
 
             #update the gradients
             self.optimizer.step()
+
+            #update the learning rate
+            if self.run_param['lr_scheduler']:
+                self.lr_scheduler.step()
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
