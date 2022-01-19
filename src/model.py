@@ -87,7 +87,7 @@ class DrQA(nn.Module):
     
 class BertQA(nn.Module):
 
-    def __init__(self,device) :      #TODO qualcos'altro ?
+    def __init__(self, device, dropout) :      #TODO qualcos'altro ?
         super().__init__()
 
         self.device = device
@@ -95,6 +95,8 @@ class BertQA(nn.Module):
         self.bert = BertModel.from_pretrained(globals.BERT_PRETRAINED)
         self.start_token_classifier =  nn.Linear(self.bert.config.hidden_size, 1)
         self.end_token_classifier =  nn.Linear(self.bert.config.hidden_size, 1)
+
+        self.dropout = nn.Dropout(dropout)
 
         self.to(device)
     
@@ -109,7 +111,7 @@ class BertQA(nn.Module):
 
         bert_outputs = self.bert(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
 
-        sequence_outputs = bert_outputs[0]
+        sequence_outputs = self.dropout(bert_outputs[0])
         # [bs, len_txt, hidden_dim]
 
         start_scores = self.start_token_classifier(sequence_outputs)  

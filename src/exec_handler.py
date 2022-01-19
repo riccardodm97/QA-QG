@@ -73,6 +73,7 @@ class QA_handler :
             BATCH_SIZE = 8
             LR = 5e-5
             EPS = 1e-06
+            DROPOUT = 0.2
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             GRAD_CLIPPING = 2.0
@@ -89,7 +90,7 @@ class QA_handler :
             wandb.config.lr_scheduler = LR_SCHEDULER
             
             
-            self.model = models.BertQA(device)
+            self.model = models.BertQA(device,DROPOUT)
 
             self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
