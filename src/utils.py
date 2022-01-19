@@ -144,13 +144,15 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
     pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
 
     probs = torch.einsum('ki,kj->kij', pred_start_logit, pred_end_logit)     # outer multiplication -> [batch_size, context_len, contex_len]
-    upper_diag = torch.triu(probs)      #we take only the upper triangular part since the lower one has ends and starts inverted
+    upper_diag = torch.triu(probs)
+    lower_diag = torch.tril(probs,diagonal=-1) * 1e+10
+    res_matrix = torch.add(upper_diag,lower_diag)
 
-    maximum_row, _ = torch.min(upper_diag, dim=2)       #maximum values on row
-    maximum_col, _ = torch.min(upper_diag, dim=1)       #maximum values on columns
+    minimum_row, _ = torch.min(res_matrix, dim=2)       #maximum values on row
+    minimum_col, _ = torch.min(res_matrix, dim=1)       #maximum values on columns
 
-    s_idx = torch.argmin(maximum_row, dim=1)            #row index of maximum per example in batch 
-    e_idx = torch.argmin(maximum_col, dim=1)            #column index of maximum per example in batch
+    s_idx = torch.argmin(minimum_row, dim=1)            #row index of maximum per example in batch 
+    e_idx = torch.argmin(minimum_col, dim=1)            #column index of maximum per example in batch
 
     return s_idx, e_idx
 
