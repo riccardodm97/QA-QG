@@ -166,6 +166,7 @@ class QA_handler :
         
         end_time = time.perf_counter()
         metrics['epoch_time'] = end_time-start_time
+        metrics['lr'] = self.lr_scheduler.get_last_lr()
 
         return utils.compute_avg_dict('train',metrics)
 
