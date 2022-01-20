@@ -34,6 +34,9 @@ class DrQA(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.to(self.device)
+    
+    def get_model_name() -> str :
+        return 'DrQA'
       
     
     def forward(self, inputs):   
@@ -99,6 +102,9 @@ class BertQA(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.to(device)
+    
+    def get_model_name() -> str :
+        return 'BertQA'
     
 
     def forward(self, inputs):   

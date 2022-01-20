@@ -27,6 +27,7 @@ TODO IMPORTANT
 - commentare codice 
 - compute_answers.py 
 - rimuovere i #TODO 
+- save model 
 
 
 TODO SECONDARY
