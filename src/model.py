@@ -35,7 +35,7 @@ class DrQA(nn.Module):
 
         self.to(self.device)
     
-    def get_model_name() -> str :
+    def get_model_name(self) -> str :
         return 'DrQA'
       
     
@@ -103,7 +103,7 @@ class BertQA(nn.Module):
 
         self.to(device)
     
-    def get_model_name() -> str :
+    def get_model_name(self) -> str :
         return 'BertQA'
     
 
@@ -149,7 +149,7 @@ class ElectraQA(nn.Module):
 
         self.to(device)
     
-    def get_model_name() -> str :
+    def get_model_name(self) -> str :
         return 'ElectraQA'
     
 
