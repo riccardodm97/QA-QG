@@ -69,11 +69,48 @@ class QA_handler :
             self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
 
         
-            N_EPOCHS = 5
+            N_EPOCHS = 3
             BATCH_SIZE = 8
             LR = 2e-5
             EPS = 1e-08
-            DROPOUT = 0.3
+            DROPOUT = 0.1
+            WEIGHT_DECAY = 0.01
+            RANDOM_BATCH = False
+            GRAD_CLIPPING = 2.0
+            LR_SCHEDULER = True
+            WARMUP = 24000
+
+            #log model configuration   
+            wandb.config.n_epochs = N_EPOCHS
+            wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.batch_size = BATCH_SIZE
+            wandb.config.learning_rate = LR
+            wandb.config.epsilon = EPS
+            wandb.config.weight_decay = WEIGHT_DECAY
+            wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.lr_scheduler = LR_SCHEDULER
+            wandb.config.warmup = WARMUP
+            
+            
+            self.model = models.BertQA(device,DROPOUT)
+
+            self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
+        
+            self.run_param = {
+                'n_epochs' : N_EPOCHS,
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : LR_SCHEDULER
+            }
+
+        elif model_name == 'ELECTRA' :
+            
+            self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
+
+            N_EPOCHS = 4
+            BATCH_SIZE = 8
+            LR = 1e-4
+            EPS = 1e-06
+            DROPOUT = 0
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             GRAD_CLIPPING = 2.0
@@ -92,9 +129,9 @@ class QA_handler :
             wandb.config.warmup = WARMUP
             
             
-            self.model = models.BertQA(device,DROPOUT)
+            self.model = models.ElectraQA(device, DROPOUT)
 
-            self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
+            self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -116,7 +153,7 @@ class QA_handler :
 
         self.model.train()
 
-        for batch_id, batch in enumerate(tqdm(iterator)):
+        for batch in tqdm(iterator):
 
             #zero the gradients 
             self.model.zero_grad(set_to_none=True)
@@ -142,8 +179,7 @@ class QA_handler :
 
             #update the learning rate
             if self.run_param['lr_scheduler']:
-                l = self.lr_scheduler.step()
-                wandb.log({"lr": l, "batch": batch_id}, commit=False)
+                self.lr_scheduler.step()
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -167,6 +203,7 @@ class QA_handler :
         
         end_time = time.perf_counter()
         metrics['epoch_time'] = end_time-start_time
+        metrics['lr'] = self.lr_scheduler.get_last_lr()
 
         return utils.compute_avg_dict('train',metrics)
 
@@ -219,9 +256,6 @@ class QA_handler :
     
     def train_and_eval(self):
 
-        best_val_f1 = 0.0
-        model_save_path = 'models/'+self.model.get_model_name()+'.pt'
-
         train_dataloader, val_dataloader = self.dataloaders
 
         for epoch in range(self.run_param['n_epochs']):
@@ -246,13 +280,5 @@ class QA_handler :
 
             wandb.log(train_metrics)
             wandb.log(val_metrics)
-            wandb.log({'epoch_num': epoch})
         
             #TODO save model somewhere 
-            if val_metrics['val/f1'] >= best_val_f1:
-                best_val_f1 = val_metrics['val/f1']
-                if not os.path.exists('models'):        
-                    os.makedirs('models')
-                torch.save(self.model.state_dict(),model_save_path)
-            
-        wandb.save(model_save_path)

@@ -152,7 +152,6 @@ class ElectraQA(nn.Module):
     def get_model_name(self) -> str :
         return 'ElectraQA'
     
-
     def forward(self, inputs):   
        
         ids = inputs['ids']                           # [bs, len_text]
