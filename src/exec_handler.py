@@ -2,6 +2,7 @@ import os
 import logging
 import time 
 from collections import OrderedDict, defaultdict
+from turtle import back
 
 import torch
 import torch.optim as optim
@@ -116,7 +117,7 @@ class QA_handler :
 
         self.model.train()
 
-        for batch in tqdm(iterator):
+        for batch_id, batch in enumerate(tqdm(iterator)):
 
             #zero the gradients 
             self.model.zero_grad(set_to_none=True)
@@ -142,7 +143,8 @@ class QA_handler :
 
             #update the learning rate
             if self.run_param['lr_scheduler']:
-                self.lr_scheduler.step()
+                l = self.lr_scheduler.step()
+                wandb.log({"lr": l, "batch": batch_id}, commit=False)
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -166,7 +168,6 @@ class QA_handler :
         
         end_time = time.perf_counter()
         metrics['epoch_time'] = end_time-start_time
-        #metrics['lr'] = self.lr_scheduler.get_last_lr()
 
         return utils.compute_avg_dict('train',metrics)
 
@@ -246,6 +247,7 @@ class QA_handler :
 
             wandb.log(train_metrics)
             wandb.log(val_metrics)
+            wandb.log({'epoch_num': epoch})
         
             #TODO save model somewhere 
             if val_metrics['val/f1'] >= best_val_f1:
