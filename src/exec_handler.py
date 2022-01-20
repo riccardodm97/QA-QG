@@ -116,6 +116,7 @@ class QA_handler :
             GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
             WARMUP = 2000
+            HIDDEN_DIM = 128
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -127,9 +128,9 @@ class QA_handler :
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.lr_scheduler = LR_SCHEDULER
             wandb.config.warmup = WARMUP
+            wandb.config.hidden_dim = HIDDEN_DIM
             
-            
-            self.model = models.ElectraQA(device, DROPOUT)
+            self.model = models.ElectraQA(device, DROPOUT, HIDDEN_DIM)
 
             self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
