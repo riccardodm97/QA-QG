@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from transformers import BertModel
+from transformers import BertModel, ElectraModel
 
 import src.layer as layer 
 import src.globals as globals 
@@ -118,11 +118,61 @@ class BertQA(nn.Module):
         bert_outputs = self.bert(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
 
         sequence_outputs = self.dropout(bert_outputs[0])
-        # [bs, len_txt, hidden_dim]
+        # [bs, len_txt, bert_hidden_dim]
 
         start_scores = self.start_token_classifier(sequence_outputs)  
         end_scores = self.end_token_classifier(sequence_outputs)
         # [bs, len_txt, 1]
+
+        start_scores = start_scores.squeeze(-1)
+        end_scores = end_scores.squeeze(-1)
+        # [bs, len_txt]
+
+        start_scores = start_scores.masked_fill(answer_space_mask == 0, float('-inf'))
+        end_scores = end_scores.masked_fill(answer_space_mask == 0, float('-inf'))
+
+        return start_scores, end_scores
+
+
+class ElectraQA(nn.Module):
+
+    def __init__(self, device, dropout, hidden_dim) :      #TODO qualcos'altro ?
+        super().__init__()
+
+        self.device = device
+
+        self.electra = ElectraModel.from_pretrained(globals.ELECTRA_PRETRAINED)
+        self.rnn = nn.LSTM(self.electra.config.hidden_size, hidden_dim, batch_first = True, bidirectional = True)
+        self.token_classifier =  nn.Linear(hidden_dim*2, 2)
+
+        self.dropout = nn.Dropout(dropout)
+
+        self.to(device)
+    
+    def get_model_name() -> str :
+        return 'ElectraQA'
+    
+
+    def forward(self, inputs):   
+       
+        ids = inputs['ids']                           # [bs, len_text]
+        mask = inputs['mask']                         # [bs, len_text]
+        type_ids = inputs['type_ids']                 # [bs, len_text]
+        special_token_mask = inputs['special_tokens_mask']        
+        answer_space_mask = type_ids & ~special_token_mask           
+
+        electra_outputs = self.electra(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
+
+        sequence_outputs = self.dropout(electra_outputs[0])
+        # [bs, len_txt, electra_hidden_dim]
+
+        lstm_out, _  = self.rnn(sequence_outputs)
+        # [bs, len_txt, lstm_hidden_dim]
+
+        token_scores = self.start_token_classifier(lstm_out)  
+        # [bs, len_txt, 2]
+
+        start_scores, end_scores = token_scores.split(1, dim=-1)
 
         start_scores = start_scores.squeeze(-1)
         end_scores = end_scores.squeeze(-1)
