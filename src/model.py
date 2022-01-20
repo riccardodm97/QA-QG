@@ -168,7 +168,7 @@ class ElectraQA(nn.Module):
         lstm_out, _  = self.rnn(sequence_outputs)
         # [bs, len_txt, lstm_hidden_dim]
 
-        token_scores = self.start_token_classifier(lstm_out)  
+        token_scores = self.token_classifier(lstm_out)  
         # [bs, len_txt, 2]
 
         start_scores, end_scores = token_scores.split(1, dim=-1)
