@@ -73,8 +73,8 @@ class QA_handler :
             BATCH_SIZE = 8
             LR = 2e-5
             EPS = 1e-08
-            DROPOUT = 0
-            WEIGHT_DECAY = 0.02
+            DROPOUT = 0.3
+            WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
