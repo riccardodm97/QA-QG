@@ -102,7 +102,7 @@ class QA_handler :
                 'lr_scheduler' : LR_SCHEDULER
             }
 
-        elif model_name == 'ELECTRA' :
+        elif model_name == 'Electra' :
             
             self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
 

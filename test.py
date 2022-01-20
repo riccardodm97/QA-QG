@@ -1,4 +1,4 @@
 
 from train import main
 
-main('qa','ELECTRA','training_set.json',True)
+main('qa','Electra','training_set.json',True)
