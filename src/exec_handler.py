@@ -72,8 +72,8 @@ class QA_handler :
             N_EPOCHS = 5
             BATCH_SIZE = 8
             LR = 2e-5
-            EPS = 1e-06
-            DROPOUT = 0.2
+            EPS = 1e-08
+            DROPOUT = 0.3
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             GRAD_CLIPPING = 2.0
@@ -94,7 +94,7 @@ class QA_handler :
             
             self.model = models.BertQA(device,DROPOUT)
 
-            self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
+            self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
