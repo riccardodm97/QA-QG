@@ -2,7 +2,6 @@ import os
 import logging
 import time 
 from collections import OrderedDict, defaultdict
-from turtle import back
 
 import torch
 import torch.optim as optim
