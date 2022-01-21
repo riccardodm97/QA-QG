@@ -77,7 +77,7 @@ class QA_handler :
             RANDOM_BATCH = False
             GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
-            WARMUP = 24000
+            WARMUP = 2000
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -177,7 +177,8 @@ class QA_handler :
 
             #update the learning rate
             if self.run_param['lr_scheduler']:
-                l = self.lr_scheduler.step()
+                self.lr_scheduler.step()
+                l = self.lr_scheduler.get_last_lr()
                 wandb.log({"lr": l, "batch": batch_id})
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
@@ -202,7 +203,6 @@ class QA_handler :
         
         end_time = time.perf_counter()
         metrics['epoch_time'] = end_time-start_time
-        metrics['lr'] = self.lr_scheduler.get_last_lr()
 
         return utils.compute_avg_dict('train',metrics)
 
@@ -255,6 +255,9 @@ class QA_handler :
     
     def train_and_eval(self):
 
+        best_val_f1 = 0.0
+        model_save_path = 'models/'+self.model.get_model_name()+'.pt'
+
         train_dataloader, val_dataloader = self.dataloaders
 
         for epoch in range(self.run_param['n_epochs']):
@@ -283,4 +286,11 @@ class QA_handler :
             wandb.log(train_metrics)
             wandb.log(val_metrics)
         
-            #TODO save model somewhere 
+            #TODO save model somewhere
+            if val_metrics['val/f1'] >= best_val_f1:
+                best_val_f1 = val_metrics['val/f1']
+                if not os.path.exists('models'):        
+                    os.makedirs('models')
+                torch.save(self.model.state_dict(), model_save_path)
+            
+        wandb.save(model_save_path)
