@@ -17,24 +17,24 @@ TODO IMPORTANT
 - pack_padded_sequence e viceversa  ✔
 - rimuovere assunzioni [2/3]
 - tutti start e end time come start_time end_time ✔
-- controllare/rimuovere errori ✔ (più o meno)
+- controllare errori ✔ 
 - fixare l'orario della run di wandb ✔
 - lr_scheduler ✔
 - altri modi di calcolare start e end token (joint prob, dksifoua, ecc) ✔
 - modo di calcolare la loss ✔
 - migliorare bert ✔
 - save model ✔
-- group answers by id 
-- commentare codice 
 - compute_answers.py 
-- rimuovere i #TODO 
 - train-val split su title 
-- evaluate.py loro non nostro 
+- remove errors 
 - has label -> has_answers
+- commentare codice 
+- rimuovere i #TODO 
 
 
 
 TODO SECONDARY
+- group answers by id 
 - codice kushalj001 -> dksifoua 
 - dataloader sort per minimizzare padding 
 - riordinare utils 
