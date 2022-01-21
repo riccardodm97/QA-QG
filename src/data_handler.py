@@ -148,7 +148,7 @@ class DataManager:
         return df[df['split']=='train'], df[df['split']=='val']
 
     
-    def get_dataloader(self, split : str, batch_size : int, random : bool):
+    def get_dataloader(self, split : str, batch_size : int, random : bool = False):
 
         dataset = getattr(self,split+'_hf_dataset')
         assert dataset, f'No {split} dataset present'
@@ -227,7 +227,8 @@ class RecurrentDataManager(DataManager):
                 'label_token_start': torch.tensor([e.char_to_token(starts[i]) for i,e in enumerate(context_encodings)], device=self.device),
                 'label_token_end': torch.tensor([e.char_to_token(ends[i]-1) for i,e in enumerate(context_encodings)], device=self.device),
                 'context_text': batch['context'],
-                'answer_text': batch['answer']    
+                'answer_text': batch['answer'],
+                'question_ids' : batch['question_id']  
             }
 
             return batch
@@ -243,7 +244,8 @@ class RecurrentDataManager(DataManager):
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
                 'offsets': torch.tensor([e.offsets for e in context_encodings]),
-                'context_text': batch['context'] 
+                'context_text': batch['context'],
+                'question_ids' : batch['question_id']
             }
 
             return batch
@@ -315,7 +317,8 @@ class TransformerDataManager(DataManager):
                 'label_token_start': torch.tensor([e.char_to_token(starts[i],1) for i,e in enumerate(encodings)], device=self.device),
                 'label_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(encodings)], device=self.device),
                 'context_text': batch['context'],
-                'answer_text': batch['answer']
+                'answer_text': batch['answer'],
+                'question_ids' : batch['question_id']
             }
 
             return batch
@@ -332,6 +335,7 @@ class TransformerDataManager(DataManager):
                 'offsets': torch.tensor([e.offsets for e in encodings], device=self.device), 
                 'type_ids': torch.tensor([e.type_ids for e in encodings], device=self.device),
                 'context_text': batch['context'],
+                'question_ids' : batch['question_id']
             }
 
             return batch

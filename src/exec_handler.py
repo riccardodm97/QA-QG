@@ -25,7 +25,7 @@ class QA_handler :
     
         dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
 
-        squad_dataset = RawSquadDataset(train_dataset_path= dataset_path)
+        squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
 
         if model_name == 'DrQA' : 
 

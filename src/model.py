@@ -90,7 +90,7 @@ class DrQA(nn.Module):
     
 class BertQA(nn.Module):
 
-    def __init__(self, device, dropout) :      #TODO qualcos'altro ?
+    def __init__(self, device, dropout = 0.1) :      #TODO qualcos'altro ?
         super().__init__()
 
         self.device = device
