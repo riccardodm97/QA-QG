@@ -15,7 +15,7 @@ from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager,
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
-
+from evaluation import qa_evaluate
 
 logger = logging.getLogger(globals.LOG_NAME)
 
@@ -25,7 +25,7 @@ class QA_handler :
     
         dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
 
-        squad_dataset = RawSquadDataset(dataset_path)
+        squad_dataset = RawSquadDataset(train_dataset_path= dataset_path)
 
         if model_name == 'DrQA' : 
 
@@ -193,7 +193,7 @@ class QA_handler :
                 'answer' : batch['answer_text']
                 })
 
-            batch_metrics = utils.qa_evaluate(to_eval)
+            batch_metrics = qa_evaluate(to_eval)
 
             batch_metrics['loss'] = total_loss.item()
             
@@ -239,7 +239,7 @@ class QA_handler :
                     'answer' : batch['answer_text']
                     })
 
-                batch_metrics = utils.qa_evaluate(to_eval)
+                batch_metrics = qa_evaluate(to_eval)
 
                 batch_metrics['loss'] = total_loss.item()
                 
