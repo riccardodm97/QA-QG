@@ -15,7 +15,7 @@ from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager,
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
-from evaluation import qa_evaluate
+from src.evaluation import qa_evaluate
 
 logger = logging.getLogger(globals.LOG_NAME)
 
@@ -29,7 +29,7 @@ class QA_handler :
 
         if model_name == 'DrQA' : 
 
-            self.data_manager : DataManager = RecurrentDataManager(squad_dataset,device)
+            self.data_manager : DataManager = RecurrentDataManager(squad_dataset, device)
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
@@ -65,9 +65,8 @@ class QA_handler :
         
         elif model_name == 'BERT' :
             
-            self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
+            self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
 
-        
             N_EPOCHS = 3
             BATCH_SIZE = 8
             LR = 2e-5
@@ -103,7 +102,7 @@ class QA_handler :
 
         elif model_name == 'Electra' :
             
-            self.data_manager : DataManager = TransformerDataManager(squad_dataset,device)
+            self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
 
             N_EPOCHS = 5
             BATCH_SIZE = 8
@@ -286,7 +285,6 @@ class QA_handler :
             wandb.log(train_metrics)
             wandb.log(val_metrics)
         
-            #TODO save model somewhere
             if val_metrics['val/f1'] >= best_val_f1:
                 best_val_f1 = val_metrics['val/f1']
                 if not os.path.exists('models'):        

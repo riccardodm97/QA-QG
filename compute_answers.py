@@ -2,11 +2,24 @@ import os
 
 from argparse import ArgumentParser
 
+from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
 import src.utils as utils 
 
 
+def main(dataset_path: str):
 
+    assert os.path.splitext(dataset_path)[1] == '.json', 'The dataset file should be in json format'
 
+    #setups 
+    utils.set_random_seed()
+    logger = utils.setup_logging()
+    device = utils.get_device()
+
+    logger.info('running evaluation script')
+
+    test_dataset = RawSquadDataset(test_dataset_path = dataset_path)
+
+    data_manager : DataManager = TransformerDataManager(test_dataset, device)
 
 
 
@@ -25,11 +38,8 @@ import src.utils as utils
 if __name__ == '__main__':
 
     parser = ArgumentParser()
-    parser.add_argument("-t",  "--task", dest="task", help="Task to perform [Question Answering or Question Generation]", choices=['qa','qg'], required=True)
-    parser.add_argument("-m", "--model", dest="model", help="Model to be trained", choices=['DrQA','BERT','Electra'], required=True)
-    parser.add_argument("-d", "--dataset", dest="dataset", help ="the name of the file which contains the dataset", required=True, type = str)
-    parser.add_argument("-l",  "--log", dest="log", help="Wheter to log on wandb or not", action='store_true')
+    parser.add_argument('dataset_path',  help='path to json dataset file')
     args = parser.parse_args()
 
 
-    main(args.task,args.model,args.dataset,args.log)
+    main(args.dataset_path)

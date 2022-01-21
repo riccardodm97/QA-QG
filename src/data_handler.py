@@ -135,12 +135,12 @@ class DataManager:
 
         first_val = perc_idx + 1
 
-        c_id = df.loc[perc_idx,'context_id']
+        title = df.loc[perc_idx,'title']
 
-        # keep all the examples with the same context within the same split 
+        # keep all the examples with the same title within the same split 
         for row in df[first_val:].iterrows():      
 
-            if row[1]['context_id'] == c_id :
+            if row[1]['title'] == title :
                 df.loc[row[0],'split'] = 'train'
             else :
                 break
