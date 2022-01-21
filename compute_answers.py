@@ -7,7 +7,7 @@ import logging
 import torch
 import torch.nn as nn 
 
-from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
+from src.data_handler import RawSquadDataset, DataManager, TransformerDataManager
 import src.utils as utils 
 import src.model as models
 import src.globals as globals
@@ -41,6 +41,7 @@ def generate_predictions(model : nn.Module , iterator):
             predictions.update(batch_predictions)
 
 
+    logger.info('saving predictions.json file in data folder')
     with open(predictions_file_path,'w') as file:
         json.dump(predictions,file)
 
@@ -49,6 +50,7 @@ def generate_predictions(model : nn.Module , iterator):
 def main(dataset_path: str):
 
     assert os.path.splitext(dataset_path)[1] == '.json', 'The dataset file should be in json format'
+    assert os.path.exists('models/BertQA.pt'), 'The trained model should be present in the models folder'
 
     #setups 
     utils.set_random_seed()
@@ -61,9 +63,11 @@ def main(dataset_path: str):
 
     data_manager : DataManager = TransformerDataManager(test_dataset, device)
 
-    best_model = models.BertQA(device)
-
     test_dataloader = data_manager.get_dataloader('test', 8)
+
+    best_model = models.BertQA(device)
+    best_model.load_state_dict(torch.load('models/BertQA.pt'))
+
 
     generate_predictions(best_model, test_dataloader)
 
