@@ -92,7 +92,7 @@ class QA_handler :
             wandb.config.warmup = WARMUP
             
             
-            self.model = models.BertQA(device,DROPOUT)
+            self.model = models.BertQA(device, DROPOUT)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
@@ -143,7 +143,7 @@ class QA_handler :
             #update the learning rate
             if self.run_param['lr_scheduler']:
                 l = self.lr_scheduler.step()
-                wandb.log({"lr": l, "batch": batch_id}, commit=False)
+                wandb.log({"lr": l, "batch": batch_id})
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -243,10 +243,12 @@ class QA_handler :
                         val_metrics["val/loss"], val_metrics["val/accuracy"],val_metrics["val/f1"], val_metrics["val/em"], 
                         val_metrics["val/mean_start_dist"],val_metrics["val/mean_end_dist"],
                         val_metrics['val/numerical_accuracy_start'],val_metrics['val/numerical_accuracy_end'])           
+            
+            train_metrics['train/epoch_num'] = epoch
+            val_metrics['val/epoch_num'] = epoch 
 
             wandb.log(train_metrics)
             wandb.log(val_metrics)
-            wandb.log({'epoch_num': epoch})
         
             #TODO save model somewhere 
             if val_metrics['val/f1'] >= best_val_f1:
