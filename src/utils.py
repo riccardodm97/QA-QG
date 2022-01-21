@@ -140,36 +140,36 @@ def get_run_id():
 
  
 def compute_predictions(starts,ends):    #TODO come calcolarle ? 
+    
+    _, len_txt = starts.size()
 
-    # pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
+    pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
 
-    # probs = torch.einsum('ki,kj->kij', pred_start_logit, pred_end_logit)     # outer multiplication -> [batch_size, context_len, contex_len]
-    # upper_diag = torch.triu(probs)
-    # lower_diag = torch.tril(probs,diagonal=-1) * 1e+10
-    # res_matrix = torch.add(upper_diag,lower_diag)
+    sum_on_row = pred_start_logit.unsqueeze(2) + pred_end_logit.unsqueeze(1)        # [batch_size, text_length, text_length]
 
-    # minimum_row, _ = torch.min(res_matrix, dim=2)       #maximum values on row
-    # minimum_col, _ = torch.min(res_matrix, dim=1)       #maximum values on columns
+    mask = (torch.ones(len_txt, len_txt) * float('-inf')).tril(-1)      # -inf on lower diagonal and 0 on upper diagonal
 
-    # s_idx = torch.argmin(minimum_row, dim=1)            #row index of maximum per example in batch 
-    # e_idx = torch.argmin(minimum_col, dim=1)            #column index of maximum per example in batch
+    out = sum_on_row + mask                         #mask illegal positions (start > end)
 
-    # return s_idx, e_idx
+    maximum_row, _ = torch.max(out, dim=2)          #maximum values on row
+    maximum_col, _ = torch.max(out, dim=1)          #maximum values on columns
+    s_idx = torch.argmax(maximum_row, dim=1)        #row index of maximum per example in batch 
+    e_idx = torch.argmax(maximum_col, dim=1)        #column index of maximum per example in batch
 
     # alternative 
-    batch_size, c_len = starts.size()
-    ls = nn.LogSoftmax(dim=1)
-    mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
-    score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
-    score, s_idx = score.max(dim=1)
-    score, e_idx = score.max(dim=1)
-    s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
-    return s_idx, e_idx
+    # batch_size, c_len = starts.size()
+    # ls = nn.LogSoftmax(dim=1)
+    # mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
+    # score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
+    # score, s_idx = score.max(dim=1)
+    # score, e_idx = score.max(dim=1)
+    # s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
 
     # # alternative 
     # pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
     # s_idx, e_idx = torch.argmax(pred_start_logit,dim=1), torch.argmax(pred_end_logit,dim=1)
-    # return s_idx, e_idx
+
+    return s_idx, e_idx
 
 
 def compute_avg_dict(mode : str, metrics : dict) -> dict :
