@@ -71,7 +71,9 @@ class RawSquadDataset:
         json_file = json.loads(open(from_path).read())
 
         df = None
-        if (any(pd.json_normalize(json_file,self.JSON_RECORD[:-1]).answers.apply(len)== 0)):
+        
+        answ = pd.json_normalize(json_file,self.JSON_RECORD[:-1]).answers
+        if any(answ.apply(len)== 0) or answ.isnull().values.any():
             df = pd.json_normalize(json_file, self.JSON_RECORD[:-1],meta=[["data", "title"],['data','paragraph','context']])
             if "answers" in df.columns:
                 df = df.drop("answers", axis="columns")
