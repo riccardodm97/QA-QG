@@ -22,12 +22,16 @@ TODO IMPORTANT
 - lr_scheduler ✔
 - altri modi di calcolare start e end token (joint prob, dksifoua, ecc) ✔
 - modo di calcolare la loss ✔
-- migliorare bert 
+- migliorare bert ✔
+- save model ✔
 - group answers by id 
 - commentare codice 
 - compute_answers.py 
 - rimuovere i #TODO 
-- save model 
+- train-val split su title 
+- evaluate.py loro non nostro 
+- has label -> has_answers
+
 
 
 TODO SECONDARY

@@ -15,7 +15,6 @@ from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager,
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
-from src.evaluate import QA_evaluate
 
 
 logger = logging.getLogger(globals.LOG_NAME)
@@ -132,7 +131,7 @@ class QA_handler :
             
             self.model = models.ElectraQA(device, DROPOUT, HIDDEN_DIM)
 
-            self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
+            self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -141,7 +140,7 @@ class QA_handler :
             }
     
         self.criterion = nn.CrossEntropyLoss().to(device)
-        self.dataloaders = self.data_manager.get_dataloader('train',BATCH_SIZE,RANDOM_BATCH), self.data_manager.get_dataloader('val',BATCH_SIZE,RANDOM_BATCH)
+        self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
         self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
 
     
@@ -193,7 +192,7 @@ class QA_handler :
                 'answer' : batch['answer_text']
                 })
 
-            batch_metrics = QA_evaluate(to_eval)
+            batch_metrics = utils.qa_evaluate(to_eval)
 
             batch_metrics['loss'] = total_loss.item()
             
@@ -240,7 +239,7 @@ class QA_handler :
                     'answer' : batch['answer_text']
                     })
 
-                batch_metrics = QA_evaluate(to_eval)
+                batch_metrics = utils.qa_evaluate(to_eval)
 
                 batch_metrics['loss'] = total_loss.item()
                 
