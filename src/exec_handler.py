@@ -259,6 +259,8 @@ class QA_handler :
 
         for epoch in range(self.run_param['n_epochs']):
 
+            metrics = {}
+
             logger.info('starting epoch %d',epoch+1)
             start_time = time.perf_counter()
 
@@ -277,9 +279,11 @@ class QA_handler :
                         val_metrics["val/mean_start_dist"],val_metrics["val/mean_end_dist"],
                         val_metrics['val/numerical_accuracy_start'],val_metrics['val/numerical_accuracy_end'])           
 
+            metrics.update(train_metrics)
+            metrics.update(val_metrics)
+            metrics['epoch'] = epoch+1
 
-            wandb.log(train_metrics, step=epoch+1)
-            wandb.log(val_metrics, step=epoch+1)
+            wandb.log(metrics)
         
             if val_metrics['val/f1'] >= best_val_f1:
                 best_val_f1 = val_metrics['val/f1']
