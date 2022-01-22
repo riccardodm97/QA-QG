@@ -8,6 +8,7 @@ from datetime import datetime
 import requests
 import pytz 
 
+import pandas as pd 
 import numpy as np
 import torch 
 from torch import nn
@@ -184,11 +185,11 @@ def compute_avg_dict(mode : str, metrics : dict) -> dict :
     return {prepend_mode(k): cond_mean(v) for k,v in metrics.items()}
 
 
-def remove_errors(dataset):
+def remove_errors(df : pd.DataFrame):
 
     error_ids = open(os.path.join(globals.DATA_FOLDER,'error_ids.txt')).read().splitlines()
     
-    return dataset.train_df[~dataset.train_df['question_id'].isin(error_ids)]
+    return df[~df['question_id'].isin(error_ids)]
 
 
 def load_bert_vocab():
