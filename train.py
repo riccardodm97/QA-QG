@@ -5,7 +5,6 @@ from argparse import ArgumentParser
 
 import src.utils as utils 
 import src.exec_handler as exec
-import src.globals as globals
 
 
 def main(task : str, model_name : str, dataset : str, log : bool):
@@ -36,10 +35,8 @@ def main(task : str, model_name : str, dataset : str, log : bool):
 
     logger.info('starting run -> task: %s, model: %s , dataset file: %s, wandb enabled: %s',task,model_name,dataset,str(log))
 
-    dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
-
     if task == 'qa':
-        run_handler = exec.QA_handler(model_name, dataset_path, device)
+        run_handler = exec.QA_handler(model_name, dataset, device)
         run_handler.train_and_eval()
 
     elif task == 'qg':
@@ -52,8 +49,8 @@ if __name__ == '__main__':
     parser.add_argument("-t",  "--task", dest="task", help="Task to perform [Question Answering or Question Generation]", choices=['qa','qg'], required=True)
     parser.add_argument("-m", "--model", dest="model", help="Model to be trained", choices=['DrQA','BERT','Electra'], required=True)
     parser.add_argument("-d", "--dataset", dest="dataset", help ="the name of the file which contains the dataset", required=True, type = str)
-    # parser.add_argument("-l",  "--log", dest="log", help="Wheter to log on wandb or not", action='store_true')
+    parser.add_argument("-l",  "--log", dest="log", help="Wheter to log on wandb or not", action='store_true')
     args = parser.parse_args()
 
 
-    main(args.task,args.model,args.dataset,True)
+    main(args.task,args.model,args.dataset,args.log)
