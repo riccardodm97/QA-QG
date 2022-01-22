@@ -281,14 +281,17 @@ class QA_handler :
 
             metrics.update(train_metrics)
             metrics.update(val_metrics)
-            metrics['epoch'] = epoch+1
+            metrics['epoch'] = epoch
 
             wandb.log(metrics)
         
             if val_metrics['val/f1'] >= best_val_f1:
+
                 best_val_f1 = val_metrics['val/f1']
                 if not os.path.exists('models'):        
                     os.makedirs('models')
+            
+                logger.info('saving model at epoch %d',epoch+1)
                 torch.save(self.model.state_dict(), model_save_path)
             
         wandb.save(model_save_path)
