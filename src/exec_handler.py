@@ -175,8 +175,8 @@ class QA_handler :
             #update the learning rate
             if self.run_param['lr_scheduler']:
                 self.lr_scheduler.step()
-                l = self.lr_scheduler.get_last_lr()
-                wandb.log({"lr": l, "batch": batch_id})
+                # l = self.lr_scheduler.get_last_lr()
+                # wandb.log({"lr": l, "batch": batch_id})     #TODO: vedere se si riesce a loggare 
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
@@ -276,12 +276,10 @@ class QA_handler :
                         val_metrics["val/loss"], val_metrics["val/accuracy"],val_metrics["val/f1"], val_metrics["val/em"], 
                         val_metrics["val/mean_start_dist"],val_metrics["val/mean_end_dist"],
                         val_metrics['val/numerical_accuracy_start'],val_metrics['val/numerical_accuracy_end'])           
-            
-            train_metrics['train/epoch_num'] = epoch
-            val_metrics['val/epoch_num'] = epoch 
 
-            wandb.log(train_metrics)
-            wandb.log(val_metrics)
+
+            wandb.log(train_metrics, step=epoch+1)
+            wandb.log(val_metrics, step=epoch+1)
         
             if val_metrics['val/f1'] >= best_val_f1:
                 best_val_f1 = val_metrics['val/f1']
