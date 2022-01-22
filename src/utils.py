@@ -149,7 +149,7 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
 
     mask = (torch.ones(len_txt, len_txt) * float('-inf')).to(get_device()).tril(-1)      # -inf on lower diagonal and 0 on upper diagonal
 
-    out = sum_on_row + mask                         #mask illegal positions (start > end)
+    out = sum_on_row.to(get_device()) + mask                         #mask illegal positions (start > end)
 
     maximum_row, _ = torch.max(out, dim=2)          #maximum values on row
     maximum_col, _ = torch.max(out, dim=1)          #maximum values on columns
