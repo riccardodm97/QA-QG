@@ -72,7 +72,7 @@ class QA_handler :
             DROPOUT = 0.1
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 2.0
+            GRAD_CLIPPING = 1.0
             LR_SCHEDULER = True
             WARMUP = 2000
 
@@ -109,7 +109,7 @@ class QA_handler :
             DROPOUT = 0
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 2.0
+            GRAD_CLIPPING = 1.0
             LR_SCHEDULER = True
             WARMUP = 2000
             HIDDEN_DIM = 256
