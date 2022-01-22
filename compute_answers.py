@@ -17,6 +17,7 @@ logger = logging.getLogger(globals.LOG_NAME)
 
 def generate_predictions(model : nn.Module , iterator):
 
+    logger.info('model predictions will be saved in predictions.json file')
     predictions_file_path = os.path.join(globals.DATA_FOLDER,'predictions.json')
     
     predictions = {}
@@ -44,7 +45,7 @@ def generate_predictions(model : nn.Module , iterator):
     logger.info('saving predictions.json file in data folder')
     with open(predictions_file_path,'w') as file:
         json.dump(predictions,file)
-
+    logger.info('saved')
 
 
 def main(dataset_path: str):
@@ -57,7 +58,7 @@ def main(dataset_path: str):
     logger = utils.setup_logging()
     device = utils.get_device()
 
-    logger.info('running evaluation script')
+    logger.info('starting evaluation pipeline')
 
     test_dataset = RawSquadDataset(test_dataset_path = dataset_path)
 
@@ -65,10 +66,11 @@ def main(dataset_path: str):
 
     test_dataloader = data_manager.get_dataloader('test', 8)
 
+    logger.info('loading the model')
     best_model = models.BertQA(device)   #TODO don't harcode this 
     best_model.load_state_dict(torch.load('models/BertQA.pt', map_location=device))
 
-
+    logger.info('runnning evaluation script on dataset')
     generate_predictions(best_model, test_dataloader)
 
 
