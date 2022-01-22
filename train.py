@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 
 import src.utils as utils 
 import src.exec_handler as exec
+import src.globals as globals
 
 
 def main(task : str, model_name : str, dataset : str, log : bool):
@@ -35,8 +36,10 @@ def main(task : str, model_name : str, dataset : str, log : bool):
 
     logger.info('starting run -> task: %s, model: %s , dataset file: %s, wandb enabled: %s',task,model_name,dataset,str(log))
 
+    dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
+
     if task == 'qa':
-        run_handler = exec.QA_handler(model_name, dataset, device)
+        run_handler = exec.QA_handler(model_name, dataset_path, device)
         run_handler.train_and_eval()
 
     elif task == 'qg':

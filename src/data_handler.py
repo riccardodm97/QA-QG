@@ -56,8 +56,8 @@ class RawSquadDataset:
         '''
         Encode the specified dataset stored as json file at 'from_path' as a Pandas Dataframe
         '''
-
-        dataframe_path = os.path.join(globals.DATA_FOLDER,os.path.splitext(from_path)[0]+'_df.pkl')
+        file_name = os.path.splitext(os.path.basename(from_path))[0]+'_df.pkl'
+        dataframe_path = os.path.join(globals.DATA_FOLDER, file_name)
 
         # If already present load dataframe from data folder 
         if os.path.exists(dataframe_path):

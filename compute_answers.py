@@ -65,8 +65,8 @@ def main(dataset_path: str):
 
     test_dataloader = data_manager.get_dataloader('test', 8)
 
-    best_model = models.BertQA(device)
-    best_model.load_state_dict(torch.load('models/BertQA.pt'))
+    best_model = models.BertQA(device)   #TODO don't harcode this 
+    best_model.load_state_dict(torch.load('models/BertQA.pt', map_location=device))
 
 
     generate_predictions(best_model, test_dataloader)

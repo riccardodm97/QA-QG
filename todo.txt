@@ -30,6 +30,8 @@ TODO IMPORTANT
 - has label -> has_answers
 - commentare codice 
 - rimuovere i #TODO 
+- pulire il codice 
+- non harcodare Bert in compute_answers
 
 
 

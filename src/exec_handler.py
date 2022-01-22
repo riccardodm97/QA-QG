@@ -21,10 +21,8 @@ logger = logging.getLogger(globals.LOG_NAME)
 
 class QA_handler : 
      
-    def __init__(self,model_name, dataset, device):
+    def __init__(self, model_name, dataset_path, device):
     
-        dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
-
         squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
 
         if model_name == 'DrQA' : 
@@ -92,7 +90,7 @@ class QA_handler :
             
             self.model = models.BertQA(device, DROPOUT)
 
-            self.optimizer = AdamW(self.model.parameters(),lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
+            self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -114,7 +112,7 @@ class QA_handler :
             GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
             WARMUP = 2000
-            HIDDEN_DIM = 128
+            HIDDEN_DIM = 256
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
