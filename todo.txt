@@ -24,8 +24,8 @@ TODO IMPORTANT
 - modo di calcolare la loss ✔
 - migliorare bert ✔
 - save model ✔
-- compute_answers.py 
-- train-val split su title 
+- compute_answers.py ✔
+- train-val split su title ✔
 - remove errors 
 - has label -> has_answers
 - commentare codice 
