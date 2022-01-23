@@ -128,8 +128,9 @@ class ElectraQA(nn.Module):
         self.device = device
 
         self.electra = ElectraModel.from_pretrained(globals.ELECTRA_PRETRAINED)
-        self.rnn = nn.LSTM(self.electra.config.hidden_size, hidden_dim, batch_first = True, bidirectional = True)
-        self.token_classifier =  nn.Linear(hidden_dim*2, 2)
+        #self.rnn = nn.LSTM(self.electra.config.hidden_size, hidden_dim, batch_first = True, bidirectional = True)
+        self.token_classifier =  nn.Linear(self.electra.config.hidden_size, 2)  # self.token_classifier =  nn.Linear(hidden_dim*2, 2)
+
 
         self.dropout = nn.Dropout(dropout)
 
@@ -155,10 +156,10 @@ class ElectraQA(nn.Module):
         sequence_outputs = self.dropout(electra_outputs[0])
         # [bs, len_txt, electra_hidden_dim]
 
-        lstm_out, _  = self.rnn(sequence_outputs)
-        # [bs, len_txt, lstm_hidden_dim*2]
+        # lstm_out, _  = self.rnn(sequence_outputs)
+        # # [bs, len_txt, lstm_hidden_dim*2]
 
-        token_scores = self.token_classifier(lstm_out)  
+        token_scores = self.token_classifier(sequence_outputs)  #lstm_out
         # [bs, len_txt, 2]
 
         start_scores, end_scores = token_scores.split(1, dim=-1)
