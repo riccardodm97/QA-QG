@@ -165,13 +165,13 @@ class QA_handler :
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = (start_loss + end_loss) / 2       #TODO come calcolarla ? 
+            total_loss = (start_loss + end_loss) / 2       
 
             #backward pass 
             total_loss.backward()
             
             # gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ?   
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])      
 
             #update the gradients
             self.optimizer.step()
