@@ -87,12 +87,9 @@ class QA_handler :
             wandb.config.lr_scheduler = LR_SCHEDULER
             wandb.config.warmup = WARMUP
             
-            
             self.model = models.BertQA(device, DROPOUT)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
-            self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
-
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -133,8 +130,6 @@ class QA_handler :
             self.model = models.ElectraQA(device, DROPOUT, HIDDEN_DIM, FREEZE)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
-            self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
-
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -144,6 +139,8 @@ class QA_handler :
     
         self.criterion = nn.CrossEntropyLoss().to(device)
         self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
+        if LR_SCHEDULER: self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
+
 
     
     def train_loop(self, iterator):
