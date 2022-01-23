@@ -113,7 +113,7 @@ class QA_handler :
             LR_SCHEDULER = True
             WARMUP = 2000
             HIDDEN_DIM = 'no hidden layer'
-            FREEZE = False
+            FREEZE = True
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
