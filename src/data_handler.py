@@ -230,7 +230,7 @@ class RecurrentDataManager(DataManager):
                 'label_token_end': torch.tensor([e.char_to_token(ends[i]-1) for i,e in enumerate(context_encodings)], device=self.device),
                 'context_text': batch['context'],
                 'answer_text': batch['answer'],
-                'question_ids' : batch['question_id']  
+                'question_alpha' : batch['question_id']  
             }
 
             return batch
@@ -247,7 +247,7 @@ class RecurrentDataManager(DataManager):
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
                 'offsets': torch.tensor([e.offsets for e in context_encodings]),
                 'context_text': batch['context'],
-                'question_ids' : batch['question_id']
+                'question_alpha' : batch['question_id']
             }
 
             return batch
@@ -320,7 +320,7 @@ class TransformerDataManager(DataManager):
                 'label_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(encodings)], device=self.device),
                 'context_text': batch['context'],
                 'answer_text': batch['answer'],
-                'question_ids' : batch['question_id']
+                'question_alpha' : batch['question_id']
             }
 
             return batch
@@ -337,7 +337,7 @@ class TransformerDataManager(DataManager):
                 'offsets': torch.tensor([e.offsets for e in encodings], device=self.device), 
                 'type_ids': torch.tensor([e.type_ids for e in encodings], device=self.device),
                 'context_text': batch['context'],
-                'question_ids' : batch['question_id']
+                'question_alpha' : batch['question_id']
             }
 
             return batch

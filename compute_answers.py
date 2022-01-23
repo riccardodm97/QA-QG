@@ -37,7 +37,7 @@ def generate_predictions(model : nn.Module , iterator):
 
             pred_answers = [txt[s:e] for s,e,txt in zip(pred_start_char,pred_end_char,batch['context_text'])]
 
-            batch_predictions = dict(zip(batch['question_ids'],pred_answers))
+            batch_predictions = dict(zip(batch['question_alpha'],pred_answers))
 
             predictions.update(batch_predictions)
 
