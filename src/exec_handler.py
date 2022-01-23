@@ -79,6 +79,7 @@ class QA_handler :
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.dropout = DROPOUT
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.epsilon = EPS
@@ -117,6 +118,7 @@ class QA_handler :
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.dropout = DROPOUT
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.epsilon = EPS
@@ -127,7 +129,7 @@ class QA_handler :
             wandb.config.hidden_dim = HIDDEN_DIM
             wandb.config.freeze = FREEZE
             
-            self.model = models.ElectraQA(device, HIDDEN_DIM, dropout=DROPOUT,freeze= FREEZE)
+            self.model = models.ElectraQA(device, HIDDEN_DIM, dropout= DROPOUT,freeze= FREEZE)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
