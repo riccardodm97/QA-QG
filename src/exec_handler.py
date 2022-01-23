@@ -110,12 +110,12 @@ class QA_handler :
 
             N_EPOCHS = 3
             BATCH_SIZE = 8
-            LR = 1e-4
-            EPS = 1e-06
-            DROPOUT = 0.1
+            LR = 1e-4 #3e-5
+            EPS = 1e-12 #1e-06
+            DROPOUT = 0
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 1.0
+            GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
             WARMUP = 2000
             HIDDEN_DIM = 384
