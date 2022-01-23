@@ -127,7 +127,7 @@ class QA_handler :
             wandb.config.hidden_dim = HIDDEN_DIM
             wandb.config.freeze = FREEZE
             
-            self.model = models.ElectraQA(device, DROPOUT, HIDDEN_DIM, FREEZE)
+            self.model = models.ElectraQA(device, HIDDEN_DIM, dropout=DROPOUT,freeze= FREEZE)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
