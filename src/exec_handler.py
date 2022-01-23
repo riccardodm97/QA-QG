@@ -17,11 +17,17 @@ import  src.globals as globals
 import src.utils as utils 
 from src.evaluation import qa_evaluate
 
+from accelerate import Accelerator
+
 logger = logging.getLogger(globals.LOG_NAME)
 
 class QA_handler : 
      
-    def __init__(self, model_name, dataset_path, device):
+    def __init__(self, model_name, dataset_path):
+
+        self.accelerator = Accelerator()
+
+        device = self.accelerator.device
     
         squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
 
@@ -65,14 +71,14 @@ class QA_handler :
             
             self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
 
-            N_EPOCHS = 4
+            N_EPOCHS = 3
             BATCH_SIZE = 8
-            LR = 2e-5
+            LR = 3e-5
             EPS = 1e-08
-            DROPOUT = 0.1
+            DROPOUT = 0
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 1.0
+            GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
             WARMUP = 2000
 
@@ -143,6 +149,8 @@ class QA_handler :
         self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
         if LR_SCHEDULER: self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
 
+        self.model, self.optimizer, self.dataloaders = self.accelerator.prepare(self.model, self.optimizer, self.dataloaders)
+
 
     
     def train_loop(self, iterator):
@@ -168,7 +176,7 @@ class QA_handler :
             total_loss = (start_loss + end_loss) / 2       
 
             #backward pass 
-            total_loss.backward()
+            self.accelerator.backward(total_loss)
             
             # gradient clipping
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])      
