@@ -111,7 +111,7 @@ class QA_handler :
             GRAD_CLIPPING = 1.0
             LR_SCHEDULER = True
             WARMUP = 2000
-            HIDDEN_DIM = 256
+            HIDDEN_DIM = 384
             FREEZE = False
 
             #log model configuration   
