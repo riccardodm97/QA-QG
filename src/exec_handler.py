@@ -1,6 +1,5 @@
 import os
 import logging
-from pickle import TRUE
 import time 
 from collections import OrderedDict, defaultdict
 
@@ -113,8 +112,8 @@ class QA_handler :
             GRAD_CLIPPING = 1.0
             LR_SCHEDULER = True
             WARMUP = 2000
-            HIDDEN_DIM = 384
-            FREEZE = True
+            HIDDEN_DIM = 256
+            FREEZE = False
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -164,7 +163,7 @@ class QA_handler :
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = (start_loss*2 + end_loss) / 2       #TODO come calcolarla ? 
+            total_loss = (start_loss + end_loss) / 2       #TODO come calcolarla ? 
 
             #backward pass 
             total_loss.backward()
@@ -225,7 +224,7 @@ class QA_handler :
                 start_loss = self.criterion(pred_start_raw,true_start) 
                 end_loss = self.criterion(pred_end_raw,true_end)
 
-                total_loss = (start_loss*2 + end_loss) / 2
+                total_loss = (start_loss + end_loss) / 2
 
                 pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
