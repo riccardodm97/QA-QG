@@ -281,7 +281,7 @@ class QA_handler :
 
             metrics.update(train_metrics)
             metrics.update(val_metrics)
-            metrics['epoch'] = epoch
+            metrics['epoch'] = epoch+1 
 
             wandb.log(metrics)
         
