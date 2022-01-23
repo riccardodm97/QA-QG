@@ -31,7 +31,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
         'dataset_file': dataset
     }
 
-    wandb.init(config = config, project="squad", entity="qa-qg", mode=mode)
+    wandb.init(config = config, project="squad", entity="qa-qg", mode=mode, tags=[model_name,task])
     wandb.run.name = utils.get_run_id()     #set run name 
 
     logger.info('starting run -> task: %s, model: %s , dataset file: %s, wandb enabled: %s',task,model_name,dataset,str(log))

@@ -1,5 +1,6 @@
 import os
 import logging
+from pickle import TRUE
 import time 
 from collections import OrderedDict, defaultdict
 
@@ -102,17 +103,18 @@ class QA_handler :
             
             self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
 
-            N_EPOCHS = 5
+            N_EPOCHS = 3
             BATCH_SIZE = 8
             LR = 1e-4
             EPS = 1e-06
-            DROPOUT = 0
+            DROPOUT = 0.1
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             GRAD_CLIPPING = 1.0
             LR_SCHEDULER = True
             WARMUP = 2000
-            HIDDEN_DIM = 256
+            HIDDEN_DIM = 384
+            FREEZE = True
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -125,8 +127,9 @@ class QA_handler :
             wandb.config.lr_scheduler = LR_SCHEDULER
             wandb.config.warmup = WARMUP
             wandb.config.hidden_dim = HIDDEN_DIM
+            wandb.config.freeze = FREEZE
             
-            self.model = models.ElectraQA(device, DROPOUT, HIDDEN_DIM)
+            self.model = models.ElectraQA(device, DROPOUT, HIDDEN_DIM, FREEZE)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
@@ -161,7 +164,7 @@ class QA_handler :
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = (start_loss + end_loss) / 2       #TODO come calcolarla ? 
+            total_loss = (start_loss*2 + end_loss) / 2       #TODO come calcolarla ? 
 
             #backward pass 
             total_loss.backward()
@@ -222,7 +225,7 @@ class QA_handler :
                 start_loss = self.criterion(pred_start_raw,true_start) 
                 end_loss = self.criterion(pred_end_raw,true_end)
 
-                total_loss = (start_loss + end_loss) / 2
+                total_loss = (start_loss*2 + end_loss) / 2
 
                 pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 

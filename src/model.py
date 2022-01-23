@@ -136,16 +136,22 @@ class BertQA(nn.Module):
 
 class ElectraQA(nn.Module):
 
-    def __init__(self, device, dropout, hidden_dim) :      #TODO qualcos'altro ?
+    def __init__(self, device, dropout, hidden_dim, freeze) :      #TODO qualcos'altro ?
         super().__init__()
 
         self.device = device
 
         self.electra = ElectraModel.from_pretrained(globals.ELECTRA_PRETRAINED)
         self.rnn = nn.LSTM(self.electra.config.hidden_size, hidden_dim, batch_first = True, bidirectional = True)
-        self.token_classifier =  nn.Linear(hidden_dim*2, 2)
+        self.projection =  nn.Linear(hidden_dim*2, hidden_dim)
+        self.token_classifier =  nn.Linear(hidden_dim, 2)
 
+        self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
+
+        if freeze : 
+            for param in self.electra.parameters():
+                param.requires_grad = False
 
         self.to(device)
     
@@ -166,9 +172,13 @@ class ElectraQA(nn.Module):
         # [bs, len_txt, electra_hidden_dim]
 
         lstm_out, _  = self.rnn(sequence_outputs)
+        # [bs, len_txt, lstm_hidden_dim*2]
+
+        proj = self.projection(lstm_out)
+        proj = self.relu(proj)
         # [bs, len_txt, lstm_hidden_dim]
 
-        token_scores = self.token_classifier(lstm_out)  
+        token_scores = self.token_classifier(proj)  
         # [bs, len_txt, 2]
 
         start_scores, end_scores = token_scores.split(1, dim=-1)
