@@ -79,6 +79,7 @@ class QA_handler :
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.dropout = DROPOUT
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.epsilon = EPS
@@ -90,7 +91,6 @@ class QA_handler :
             self.model = models.BertQA(device, DROPOUT)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
-
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -112,12 +112,13 @@ class QA_handler :
             GRAD_CLIPPING = 1.0
             LR_SCHEDULER = True
             WARMUP = 2000
-            HIDDEN_DIM = 'no hidden layer'
-            FREEZE = True
+            HIDDEN_DIM = 384
+            FREEZE = False
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.dropout = DROPOUT
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.epsilon = EPS
@@ -128,10 +129,9 @@ class QA_handler :
             wandb.config.hidden_dim = HIDDEN_DIM
             wandb.config.freeze = FREEZE
             
-            self.model = models.ElectraQA(device, DROPOUT, HIDDEN_DIM, FREEZE)
+            self.model = models.ElectraQA(device, HIDDEN_DIM, dropout= DROPOUT,freeze= FREEZE)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
-
         
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
@@ -141,7 +141,8 @@ class QA_handler :
     
         self.criterion = nn.CrossEntropyLoss().to(device)
         self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
-        if LR_SCHEDULER : self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
+        if LR_SCHEDULER: self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
+
 
     
     def train_loop(self, iterator):
@@ -164,13 +165,13 @@ class QA_handler :
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
 
-            total_loss = (start_loss + end_loss) / 2       #TODO come calcolarla ? 
+            total_loss = (start_loss + end_loss) / 2       
 
             #backward pass 
             total_loss.backward()
             
             # gradient clipping
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])     #TODO che valore mettere come max norm ?   
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.run_param['grad_clipping'])      
 
             #update the gradients
             self.optimizer.step()
