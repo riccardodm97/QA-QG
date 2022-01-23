@@ -38,9 +38,8 @@ class AlignQuestionEmbedding(nn.Module):
         qtn_mask = question_mask.unsqueeze(1).expand(align_scores.size())
         # qtn_mask = [bs, 1, qtn_len] => [bs, ctx_len, qtn_len]
         
-        # Fills elements of self tensor(align_scores) with value(-float(inf)) where mask is True. 
-        # The shape of mask must be broadcastable with the shape of the underlying tensor.
-        align_scores = align_scores.masked_fill(qtn_mask == 0, -float('inf'))  # 0 identifies padding position     #TODO float('-inf')
+        # Fills elements of tensor with float(-inf) where mask is 0 (paddding positions). 
+        align_scores = align_scores.masked_fill(qtn_mask == 0, float('-inf'))     
         # align_scores = [bs, ctx_len, qtn_len]
         
         align_scores_flat = align_scores.view(-1, question.size(1))
@@ -126,19 +125,6 @@ class LinearAttentionLayer(nn.Module):
         
         return alpha
 
-    # TODO: Spostare questo in utils.py
-    def weighted_average(x, weights):
-        # x = [bs, len, dim]
-        # weights = [bs, len]
-        
-        weights = weights.unsqueeze(1)
-        # weights = [bs, 1, len]
-        
-        w = weights.bmm(x).squeeze(1)
-        # w = [bs, 1, dim] => [bs, dim]
-        
-        return w
-
 class QuestionEncodingLayer(nn.Module):
 
     def __init__(self, embedding_dim, hidden_dim, num_layers, dropout):
@@ -154,13 +140,16 @@ class QuestionEncodingLayer(nn.Module):
         
         scores = self.linear(qst_embed).squeeze(-1) 
         #scores = [batch_size, qst_len]
+
         scores = scores.masked_fill(qst_mask == 0, float('-inf'))
+
         return F.softmax(scores, dim=-1)
     
     def forward(self, qst_embed, qst_mask, qst_lengths):
         
         attention_weights = self.linear_self_attention(qst_embed, qst_mask) 
         # attention_weights = [batch_size, qst_len]
+
         lstm_outputs = self.stacked_bilstms_layer(qst_embed, qst_lengths)
         # lstm_outputs: [batch_size, qst_len, hidden_size * n_layers * 2]
 
@@ -177,7 +166,7 @@ class BilinearAttentionLayer(nn.Module):
     def forward(self, context, question, context_mask):
         
         # context = [bs, ctx_len, ctx_hid_dim] = [bs, ctx_len, hid_dim*6] = [bs, ctx_len, 768]
-        # question = [bs, qtn_hid_dim] = [bs, qtn_len, 768]
+        # question = [bs, qtn_hid_dim] 
         # context_mask = [bs, ctx_len]
         
         qtn_proj = self.linear(question)
@@ -193,8 +182,5 @@ class BilinearAttentionLayer(nn.Module):
         # scores = [bs, ctx_len]
         
         scores = scores.masked_fill(context_mask == 0, -float('inf'))
-        
-        #alpha = F.log_softmax(scores, dim=1)
-        # alpha = [bs, ctx_len]
         
         return scores

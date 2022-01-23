@@ -18,9 +18,6 @@ class DrQA(nn.Module):
         
         self.embedding_layer, self.embedding_dim = get_embedding_layer(weights_matrix, pad_idx, device)
 
-        # self.question_bilstm = layer.StackedBiLSTM(self.embedding_dim, hidden_dim, num_layers, dropout)
-        # self.linear_attn_question = layer.LinearAttentionLayer(hidden_dim*num_layers*self.num_directions) 
-
         self.context_bilstm = layer.StackedBiLSTM(self.embedding_dim * 2, hidden_dim, num_layers, dropout)
         
         self.align_embedding = layer.AlignQuestionEmbedding(self.embedding_dim)
@@ -49,32 +46,21 @@ class DrQA(nn.Module):
         question_lengths = torch.count_nonzero(question_mask,dim=1)   # [bs]
         
         ctx_embed = self.embedding_layer(context)
-        # ctx_embed = [bs, len_c, emb_dim]
+        ctx_embed = self.dropout(ctx_embed)
+        # [bs, len_c, emb_dim]
         
         qst_embed = self.embedding_layer(question)
-        # ques_embed = [bs, len_q, emb_dim]
-
-        ctx_embed = self.dropout(ctx_embed)
-     
         qst_embed = self.dropout(qst_embed)
-             
+        # [bs, len_q, emb_dim]
+
         align_embed = self.align_embedding(ctx_embed, qst_embed, question_mask)
-        # align_embed = [bs, len_c, emb_dim]  
+        # [bs, len_c, emb_dim]  
         
         ctx_bilstm_input = torch.cat([ctx_embed, align_embed], dim=2)
-        # ctx_bilstm_input = [bs, len_c, emb_dim*2]
+        # [bs, len_c, emb_dim*2]
                 
         ctx_encoded = self.context_bilstm(ctx_bilstm_input, context_lengths)
-        # ctx_outputs = [bs, len_c, hid_dim*layers*dir] = [bs, len_c, hid_dim*6]
-       
-        # qst_outputs = self.question_bilstm(qst_embed, question_lengths)
-        # # qtn_outputs = [bs, len_q, hid_dim*6]
-    
-        # qst_weights = self.linear_attn_question(qst_outputs, question_mask)
-        # # qtn_weights = [bs, len_q]
-            
-        # qst_encoded = layer.LinearAttentionLayer.weighted_average(qst_outputs, qst_weights)
-        # # qtn_weighted = [bs, hid_dim*6]
+        # [bs, len_c, hid_dim*layers*dir] = [bs, len_c, hid_dim*6]
 
         qst_encoded = self.question_encoding(qst_embed, question_mask, question_lengths)
         # qtn_weighted = [bs, hid_dim*6]
@@ -90,7 +76,7 @@ class DrQA(nn.Module):
     
 class BertQA(nn.Module):
 
-    def __init__(self, device, dropout = 0.1) :      #TODO qualcos'altro ?
+    def __init__(self, device, dropout = 0.1) :     
         super().__init__()
 
         self.device = device
@@ -136,7 +122,7 @@ class BertQA(nn.Module):
 
 class ElectraQA(nn.Module):
 
-    def __init__(self, device, dropout, hidden_dim, freeze) :      #TODO qualcos'altro ?
+    def __init__(self, device, dropout, hidden_dim, freeze) :      
         super().__init__()
 
         self.device = device
@@ -176,6 +162,7 @@ class ElectraQA(nn.Module):
         # [bs, len_txt, 2]
 
         start_scores, end_scores = token_scores.split(1, dim=-1)
+        # [bs, len_txt, 1], [bs, len_txt, 1]
 
         start_scores = start_scores.squeeze(-1)
         end_scores = end_scores.squeeze(-1)
