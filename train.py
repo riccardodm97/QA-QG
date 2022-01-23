@@ -19,11 +19,13 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     #setups 
     utils.set_random_seed()
     logger = utils.setup_logging()
+    device = utils.get_device() 
 
     #setup wandb 
     mode = None if log else 'disabled'
 
     config = {
+        'device': device,
         'task': task,
         'model_name': model_name,
         'dataset_file': dataset
@@ -37,7 +39,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     dataset_path = os.path.join(globals.DATA_FOLDER,dataset)
 
     if task == 'qa':
-        run_handler = exec.QA_handler(model_name, dataset_path)
+        run_handler = exec.QA_handler(model_name, dataset_path, device)
         run_handler.train_and_eval()
 
     elif task == 'qg':
