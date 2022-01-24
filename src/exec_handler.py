@@ -104,12 +104,12 @@ class QA_handler :
 
             N_EPOCHS = 3
             BATCH_SIZE = 8
-            LR = 1e-4
-            EPS = 1e-06
+            LR = 5e-5 #1e-4
+            EPS = 1e-12 #1e-06
             DROPOUT = 0.1
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 1.0
+            GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
             WARMUP = 2000
             HIDDEN_DIM = 384
@@ -129,7 +129,7 @@ class QA_handler :
             wandb.config.hidden_dim = HIDDEN_DIM
             wandb.config.freeze = FREEZE
             
-            self.model = models.ElectraQA(device, HIDDEN_DIM, FREEZE, dropout= DROPOUT)
+            self.model = models.ElectraQA(device, HIDDEN_DIM, dropout= DROPOUT,freeze= FREEZE)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
