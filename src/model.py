@@ -122,7 +122,7 @@ class BertQA(nn.Module):
 
 class ElectraQA(nn.Module):
 
-    def __init__(self, device, hidden_dim, dropout = 0.1, freeze = False) :      
+    def __init__(self, device, hidden_dim, freeze, dropout = 0.1) :      
         super().__init__()
 
         self.device = device

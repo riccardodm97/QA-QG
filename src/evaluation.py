@@ -71,9 +71,9 @@ def qa_evaluate(data : dict) -> dict:
     metrics = defaultdict(list)
 
     Record = namedtuple('Record', data.keys())
-    dataloader_values = [Record(*t) for t in zip(*(data.values()))]
+    data_records = [Record(*t) for t in zip(*(data.values()))]    #each element of the list is an example in 
 
-    for ex in dataloader_values:
+    for ex in data_records:
         pred_start_char = ex.offsets[ex.pred_start][0]
         pred_end_char = ex.offsets[ex.pred_end][1]
 
