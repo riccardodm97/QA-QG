@@ -212,7 +212,7 @@ class RecurrentDataManager(DataManager):
 
     def _batch_transform(self, has_answer : bool):
 
-        def transform_with_label(batch):
+        def transform_with_answer(batch):
 
             context_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['context'])
             question_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['question'])
@@ -235,7 +235,7 @@ class RecurrentDataManager(DataManager):
 
             return batch
         
-        def transform_no_label(batch):
+        def transform_no_answer(batch):
 
             context_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['context'])
             question_encodings: list[Encoding] = self.tokenizer.encode_batch(batch['question'])
@@ -252,7 +252,7 @@ class RecurrentDataManager(DataManager):
 
             return batch
         
-        return transform_with_label if has_answer else transform_no_label
+        return transform_with_answer if has_answer else transform_no_answer
 
 
 class TransformerDataManager(DataManager):
@@ -284,7 +284,7 @@ class TransformerDataManager(DataManager):
 
     def _batch_transform(self, has_answer : bool):
 
-        def transform_with_label(batch):
+        def transform_with_answer(batch):
 
             encodings: list[Encoding] = self.tokenizer.encode_batch(list(zip(batch['question'],batch['context'])))
 
@@ -326,7 +326,7 @@ class TransformerDataManager(DataManager):
             return batch
 
         
-        def transform_no_label(batch):
+        def transform_no_answer(batch):
 
             encodings: list[Encoding] = self.tokenizer.encode_batch(list(zip(batch['question'],batch['context'])))
 
@@ -342,4 +342,4 @@ class TransformerDataManager(DataManager):
 
             return batch
         
-        return transform_with_label if has_answer else transform_no_label
+        return transform_with_answer if has_answer else transform_no_answer
