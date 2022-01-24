@@ -139,7 +139,7 @@ def get_run_id():
     return datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
 
  
-def compute_predictions(starts,ends):    #TODO come calcolarle ? 
+def compute_predictions(starts,ends):    
     
     _, len_txt = starts.size()
 
@@ -155,15 +155,6 @@ def compute_predictions(starts,ends):    #TODO come calcolarle ?
     maximum_col, _ = torch.max(out, dim=1)          #maximum values on columns
     s_idx = torch.argmax(maximum_row, dim=1)        #row index of maximum per example in batch 
     e_idx = torch.argmax(maximum_col, dim=1)        #column index of maximum per example in batch
-
-    # alternative 
-    # batch_size, c_len = starts.size()
-    # ls = nn.LogSoftmax(dim=1)
-    # mask = (torch.ones(c_len, c_len) * float('-inf')).to(get_device()).tril(-1).unsqueeze(0).expand(batch_size, -1, -1)    
-    # score = (ls(starts).unsqueeze(2) + ls(ends).unsqueeze(1)) + mask
-    # score, s_idx = score.max(dim=1)
-    # score, e_idx = score.max(dim=1)
-    # s_idx = torch.gather(s_idx, 1, e_idx.view(-1, 1)).squeeze()
 
     # # alternative 
     # pred_start_logit, pred_end_logit = F.log_softmax(starts,dim=1), F.log_softmax(ends,dim=1)
