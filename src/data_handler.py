@@ -303,7 +303,7 @@ class TransformerDataManager(DataManager):
                     if flag==0 :
                         not_replaced.append(i)
             
-            for idx in not_replaced:
+            for idx in sorted(not_replaced, reverse = True):
                 encodings.pop(idx)
                 starts.pop(idx)
                 ends.pop(idx)

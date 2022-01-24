@@ -6,7 +6,6 @@ import logging
 from collections import namedtuple
 import torch
 import torch.nn as nn
-from transformers import training_args 
 
 from src.data_handler import RawSquadDataset, DataManager, TransformerDataManager, RecurrentDataManager
 import src.utils as utils 
@@ -49,8 +48,8 @@ def generate_predictions(model : nn.Module , iterator):
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
-            pred_start_char = torch.gather(batch['offsets'][:,:,0],1,pred_start.unsqueeze(-1)).squeeze()
-            pred_end_char = torch.gather(batch['offsets'][:,:,1],1,pred_end.unsqueeze(-1)).squeeze()
+            pred_start_char = torch.gather(batch['offsets'][:,:,0],1,pred_start.unsqueeze(-1))
+            pred_end_char = torch.gather(batch['offsets'][:,:,1],1,pred_end.unsqueeze(-1))
 
             pred_answers = [txt[s:e] for s,e,txt in zip(pred_start_char,pred_end_char,batch['context_text'])]
 
