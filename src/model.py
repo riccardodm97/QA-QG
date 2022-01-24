@@ -128,10 +128,11 @@ class ElectraQA(nn.Module):
         self.device = device
 
         self.electra = ElectraModel.from_pretrained(globals.ELECTRA_PRETRAINED)
-        # self.rnn = nn.LSTM(self.electra.config.hidden_size, hidden_dim, batch_first = True, bidirectional = True)
-        self.token_classifier =  nn.Linear(self.electra.config.hidden_size, 2)
+        self.rnn = nn.LSTM(self.electra.config.hidden_size, hidden_dim, batch_first = True, bidirectional = True)
+        self.projection =  nn.Linear(hidden_dim*2, hidden_dim)
+        self.token_classifier =  nn.Linear(hidden_dim, 2)
 
-
+        self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
 
         if freeze : 
@@ -156,10 +157,14 @@ class ElectraQA(nn.Module):
         sequence_outputs = self.dropout(electra_outputs[0])
         # [bs, len_txt, electra_hidden_dim]
 
-        # lstm_out, _  = self.rnn(sequence_outputs)
+        lstm_out, _  = self.rnn(sequence_outputs)
         # [bs, len_txt, lstm_hidden_dim*2]
 
-        token_scores = self.token_classifier(sequence_outputs)  #lstm_out
+        proj = self.projection(lstm_out)
+        proj = self.relu(proj)
+        # [bs, len_txt, lstm_hidden_dim]
+
+        token_scores = self.token_classifier(proj)  #lstm_out
         # [bs, len_txt, 2]
 
         start_scores, end_scores = token_scores.split(1, dim=-1)
@@ -173,6 +178,3 @@ class ElectraQA(nn.Module):
         end_scores = end_scores.masked_fill(answer_space_mask == 0, float('-inf'))
 
         return start_scores, end_scores
-
-
-
