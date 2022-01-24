@@ -25,9 +25,9 @@ QA_OBJECTS = {
 def get_model_params(model_name : str):
     if model_name == 'DrQA':
         return {} #TODO 
-    elif model_name == 'BERT':
+    elif model_name == 'BERTQA':
         return {'device':utils.get_device()}
-    elif model_name == 'Electra':
+    elif model_name == 'ElectraQA':
         return {'device':utils.get_device(),'hidden_dim':384,'freeze':False}
 
 
