@@ -69,12 +69,14 @@ class QA_handler :
             BATCH_SIZE = 8
             LR = 3e-5
             EPS = 1e-08
-            DROPOUT = 0
+            DROPOUT = 0.1
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
             WARMUP = 2000
+            HIDDEN_DIM = 384
+            FREEZE = False
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -87,8 +89,10 @@ class QA_handler :
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.lr_scheduler = LR_SCHEDULER
             wandb.config.warmup = WARMUP
+            wandb.config.hidden_dim = HIDDEN_DIM
+            wandb.config.freeze = FREEZE
             
-            self.model = models.BertQA(device, DROPOUT)
+            self.model = models.BertQA(device, HIDDEN_DIM, dropout= DROPOUT, freeze= FREEZE)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
@@ -143,8 +147,6 @@ class QA_handler :
         self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
         if LR_SCHEDULER: self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
 
-
-    
     def train_loop(self, iterator):
 
         start_time = time.perf_counter()
