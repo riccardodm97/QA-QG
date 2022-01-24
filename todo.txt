@@ -31,7 +31,7 @@ TODO IMPORTANT
 - commentare codice 
 - rimuovere i #TODO ✔
 - pulire il codice 
-- non harcodare Bert in compute_answers
+- non harcodare Bert in compute_answers ✔
 
 TODO SECONDARY
 - group answers by id ✘

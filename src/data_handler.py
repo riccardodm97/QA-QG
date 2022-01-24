@@ -184,7 +184,6 @@ class DataManager:
         raise NotImplementedError()
 
 
-    
 
 class RecurrentDataManager(DataManager):
 
