@@ -31,9 +31,9 @@ class QA_handler :
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
-            DROPOUT = 0.3
+            DROPOUT = 0.1
             N_EPOCHS = 10
-            GRAD_CLIPPING = 10
+            GRAD_CLIPPING = 1
             BATCH_SIZE = 32
             LR = 0.002
             RANDOM_BATCH = False
