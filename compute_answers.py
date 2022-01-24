@@ -18,8 +18,8 @@ Container = namedtuple('Container', ['model','datamanager'])
 
 QA_OBJECTS = {
     'DrQA': Container(models.DrQA, RecurrentDataManager),
-    'BERT': Container(models.BertQA, TransformerDataManager),
-    'Electra': Container(models.ElectraQA, TransformerDataManager)   
+    'BERTQA': Container(models.BertQA, TransformerDataManager),
+    'ElectraQA': Container(models.ElectraQA, TransformerDataManager)   
 }
 
 def get_model_params(model_name : str):
