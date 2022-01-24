@@ -27,32 +27,16 @@ TODO IMPORTANT
 - compute_answers.py ✔
 - train-val split su title ✔
 - remove errors 
-- has label -> has_answers
+- has label -> has_answers ✔
 - commentare codice 
-- rimuovere i #TODO 
+- rimuovere i #TODO ✔
 - pulire il codice 
 - non harcodare Bert in compute_answers
 
-
-TODO 22/01/2022 <-> 17.49:
--compute_answers.py -> main -> hardcode of the best model to run
--data_handler.py -> dataManager -> _build_hf_dataset -> (under set_transform) -> output_all_columns
--src -> evaluation.py -> qa_evaluate -> assert che tutte le liste nei valori del dict "data" siano della stessa lunghezza
--src -> evaluation.py -> qa_evaluate -> rename di una lista
--src -> evaluation.py -> qa_evaluate -> pred_start_char si può calcolare con la virgola
--src -> exec_handler.py -> QA_handler -> train_loop -> clip_grad_norm_ -> impostare valore massimo del gradient clipping (qual è ?)
--src -> exec_handler.py -> QA_handler -> train_loop -> come calcolare la total_loss, la dividiamo per 2 ?
--src -> exec_handler.py -> QA_handler -> train_loop -> come loggare il learning_rate su wandb
--src -> layer.py -> AlignQuestionEmbedding -> forward -> nella maschera mettiamo -float('inf') o float('-inf')
--src -> model.py -> BertQA -> cosa mettere nell'init oltre a device e dropout ?
--src -> model.py -> ElectraQA -> cosa mettere nell'init oltre a device e dropout e hidden_dim ?
--src -> utils.py -> load_embedding_model -> embedding_model.allocate_vecattrs()  #TODO why ? library bug ? 
--src -> utils.py -> compute_predictions -> scrivere un sesto metodo per calcolarle ?
-
 TODO SECONDARY
-- group answers by id 
+- group answers by id ✘
 - codice kushalj001 -> dksifoua 
-- dataloader sort per minimizzare padding 
+- dataloader sort per minimizzare padding ✘
 - riordinare utils 
 - riorganizzare data folder 
 - cambiare log strings 
@@ -100,10 +84,10 @@ DrQA model
 - rimozione errori 
 
 - migliorie 
- Glove embeddings: 50 -> 300
- Dropout LSTM: True -> False
- Get predictions: Normal -> Joint Probability
- rimuovere -inf su pad 
+ Glove embeddings: 50 -> 300 ✔
+ Dropout LSTM: True -> False ✘
+ Get predictions: Normal -> Joint Probability ✔
+ rimuovere -inf su pad
 
 
 

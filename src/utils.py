@@ -60,7 +60,7 @@ def load_embedding_model():
             #add newly created vectors to the model
             embedding_model.add_vectors([globals.UNK_TOKEN,globals.PAD_TOKEN], [unk,pad])
 
-            embedding_model.allocate_vecattrs()  #TODO why ? library bug ? 
+            embedding_model.allocate_vecattrs()
 
             embedding_model.save_word2vec_format(glove_model_path, binary=True)
             logger.info('glove model saved to file in data directory')

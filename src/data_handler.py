@@ -49,7 +49,7 @@ class RawSquadDataset:
 
             logger.info('loading test dataset from data folder')
             self.test_df =  self._json_to_dataframe(self.test_dataset_path)
-            self.test_has_labels = "answer" in self.test_df.columns
+            self.test_has_answers = "answer" in self.test_df.columns
 
     
     def _json_to_dataframe(self,from_path):
@@ -124,7 +124,7 @@ class DataManager:
         self.test_hf_dataset = None
         if self.dataset.test_df is not None:
             test_df = self.dataset.test_df
-            self.test_hf_dataset = self._build_hf_dataset(test_df, self.dataset.test_has_labels)
+            self.test_hf_dataset = self._build_hf_dataset(test_df, self.dataset.test_has_answers)
     
     def _train_val_split(self, df):
 
@@ -159,7 +159,7 @@ class DataManager:
 
         
     
-    def _build_hf_dataset(self, df : pd.DataFrame, has_labels : bool = True):  
+    def _build_hf_dataset(self, df : pd.DataFrame, has_answers : bool = True):  
 
         start_time = time.perf_counter()
         logger.info('building hf_dataset')
@@ -167,7 +167,7 @@ class DataManager:
         #encode dataframe as Huggingface dataset 
         hf_dataset = Dataset.from_pandas(df)
 
-        hf_dataset.set_transform(self._batch_transform(has_labels),output_all_columns=False)    #TODO output_all_columns
+        hf_dataset.set_transform(self._batch_transform(has_answers))
 
         end_time = time.perf_counter()
         logger.info('elapsed time in building hf_dataset : %f',end_time-start_time)
@@ -179,7 +179,7 @@ class DataManager:
 
         raise NotImplementedError()
     
-    def _batch_transform(self, has_label) -> Callable:
+    def _batch_transform(self, has_answer) -> Callable:
 
         raise NotImplementedError()
 
@@ -210,7 +210,7 @@ class RecurrentDataManager(DataManager):
         return tokenizer
 
 
-    def _batch_transform(self, has_label : bool):
+    def _batch_transform(self, has_answer : bool):
 
         def transform_with_label(batch):
 
@@ -252,7 +252,7 @@ class RecurrentDataManager(DataManager):
 
             return batch
         
-        return transform_with_label if has_label else transform_no_label
+        return transform_with_label if has_answer else transform_no_label
 
 
 class TransformerDataManager(DataManager):
@@ -282,7 +282,7 @@ class TransformerDataManager(DataManager):
         return tokenizer
 
 
-    def _batch_transform(self, has_label : bool):
+    def _batch_transform(self, has_answer : bool):
 
         def transform_with_label(batch):
 
@@ -342,4 +342,4 @@ class TransformerDataManager(DataManager):
 
             return batch
         
-        return transform_with_label if has_label else transform_no_label
+        return transform_with_label if has_answer else transform_no_label

@@ -68,14 +68,13 @@ def accuracy_precision_recall_text(true, pred):
 
 def qa_evaluate(data : dict) -> dict:
     
-    #TODO assert che tutte le liste che sono valori del dizionario data abbiano la stessa lunghezza
-    m = defaultdict(list)
+    metrics = defaultdict(list)
 
     Record = namedtuple('Record', data.keys())
-    d = [Record(*t) for t in zip(*(data.values()))]   #TODO  RENAME 
+    dataloader_values = [Record(*t) for t in zip(*(data.values()))]
 
-    for ex in d:
-        pred_start_char = ex.offsets[ex.pred_start][0]    #TODO si può fare con la virgola 
+    for ex in dataloader_values:
+        pred_start_char = ex.offsets[ex.pred_start][0]
         pred_end_char = ex.offsets[ex.pred_end][1]
 
         pred_text : str = ex.context[pred_start_char:pred_end_char] 
@@ -84,21 +83,21 @@ def qa_evaluate(data : dict) -> dict:
         f1 = f1_score(prec, rec)
         em = compute_exact(ex.answer, pred_text)
  
-        m["accuracy"].append(acc)
-        m["precision"].append(prec)
-        m["recall"].append(rec)
-        m["f1"].append(f1)
-        m["em"].append(em)
+        metrics["accuracy"].append(acc)
+        metrics["precision"].append(prec)
+        metrics["recall"].append(rec)
+        metrics["f1"].append(f1)
+        metrics["em"].append(em)
     
-    metrics = {k: np.mean(v) for k, v in m.items()}
+    average_metrics = {k: np.mean(v) for k, v in metrics.items()}
     
     start_dist = torch.abs(data['pred_start'].float() - data['true_start'].float()).mean()
     end_dist = torch.abs(data['pred_end'].float() - data['true_end'].float()).mean()
 
-    metrics['mean_start_dist'] = start_dist.item()
-    metrics['mean_end_dist'] = end_dist.item()
+    average_metrics['mean_start_dist'] = start_dist.item()
+    average_metrics['mean_end_dist'] = end_dist.item()
 
-    metrics['numerical_accuracy_start'] = torch.sum(data['pred_start'] == data['true_start'])/(data['true_start'].size(dim=0))
-    metrics['numerical_accuracy_end'] = torch.sum(data['pred_end'] == data['true_end'])/(data['true_end'].size(dim=0))
+    average_metrics['numerical_accuracy_start'] = torch.sum(data['pred_start'] == data['true_start'])/(data['true_start'].size(dim=0))
+    average_metrics['numerical_accuracy_end'] = torch.sum(data['pred_end'] == data['true_end'])/(data['true_end'].size(dim=0))
 
-    return metrics 
+    return average_metrics

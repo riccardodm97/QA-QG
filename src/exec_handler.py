@@ -179,8 +179,6 @@ class QA_handler :
             #update the learning rate
             if self.run_param['lr_scheduler']:
                 self.lr_scheduler.step()
-                # l = self.lr_scheduler.get_last_lr()
-                # wandb.log({"lr": l, "batch": batch_id})     #TODO: vedere se si riesce a loggare 
 
             pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
 
