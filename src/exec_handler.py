@@ -65,14 +65,14 @@ class QA_handler :
             
             self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
 
-            N_EPOCHS = 4
+            N_EPOCHS = 3
             BATCH_SIZE = 8
-            LR = 2e-5
+            LR = 3e-5
             EPS = 1e-08
             DROPOUT = 0.1
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 1.0
+            GRAD_CLIPPING = 2.0
             LR_SCHEDULER = True
             WARMUP = 2000
 

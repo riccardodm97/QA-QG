@@ -18,14 +18,14 @@ Container = namedtuple('Container', ['model','datamanager'])
 
 QA_OBJECTS = {
     'DrQA': Container(models.DrQA, RecurrentDataManager),
-    'BERTQA': Container(models.BertQA, TransformerDataManager),
+    'BertQA': Container(models.BertQA, TransformerDataManager),
     'ElectraQA': Container(models.ElectraQA, TransformerDataManager)   
 }
 
 def get_model_params(model_name : str):
     if model_name == 'DrQA':
         return {} #TODO 
-    elif model_name == 'BERTQA':
+    elif model_name == 'BertQA':
         return {'device':utils.get_device()}
     elif model_name == 'ElectraQA':
         return {'device':utils.get_device(),'hidden_dim':384,'freeze':False}
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('dataset_path',  help='path to json dataset file')
-    parser.add_argument('-m', '--model', dest='model', choices=['DrQA','BERTQA','ElectraQA'], default='ElectraQA')
+    parser.add_argument('-m', '--model', dest='model', choices=['DrQA','BertQA','ElectraQA'], default='ElectraQA')
     args = parser.parse_args()
 
     main(args.dataset_path, args.model)
