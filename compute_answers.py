@@ -5,7 +5,8 @@ import json
 import logging
 from collections import namedtuple
 import torch
-import torch.nn as nn 
+import torch.nn as nn
+from transformers import training_args 
 
 from src.data_handler import RawSquadDataset, DataManager, TransformerDataManager, RecurrentDataManager
 import src.utils as utils 
@@ -22,13 +23,13 @@ QA_OBJECTS = {
     'ElectraQA': Container(models.ElectraQA, TransformerDataManager)   
 }
 
-def get_model_params(model_name : str):
+def get_model_params(model_name : str, dm : DataManager, device):
     if model_name == 'DrQA':
-        return {} #TODO 
+        return {'hidden_dim':128,'num_layers':3,'dropout':0.3,'weight_matrix': dm.emb_model.vectors,'pad_idx':dm.vocab[globals.PAD_TOKEN],'device':device} 
     elif model_name == 'BertQA':
-        return {'device':utils.get_device()}
+        return {'device':device}
     elif model_name == 'ElectraQA':
-        return {'device':utils.get_device(),'hidden_dim':384,'freeze':False}
+        return {'device':device,'hidden_dim':384,'freeze':False}
 
 
 def generate_predictions(model : nn.Module , iterator):
@@ -81,11 +82,11 @@ def main(dataset_path: str, model_name : str):
 
     test_dataset = RawSquadDataset(test_dataset_path = dataset_path)
 
-    data_manager : DataManager = d(test_dataset,device) 
+    data_manager : DataManager = d(test_dataset, device) 
 
     test_dataloader = data_manager.get_dataloader('test', 8)
 
-    model_param = get_model_params(model_name)
+    model_param = get_model_params(model_name, data_manager, device)
 
     logger.info('loading the model')
     best_model = m(**model_param)    
@@ -104,3 +105,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args.dataset_path, args.model)
+    

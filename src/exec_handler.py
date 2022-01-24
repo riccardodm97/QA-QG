@@ -61,7 +61,7 @@ class QA_handler :
                 'lr_scheduler' : LR_SCHEDULER
             }
         
-        elif model_name == 'BERT' :
+        elif model_name == 'Bert' :
             
             self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
 
@@ -129,7 +129,7 @@ class QA_handler :
             wandb.config.hidden_dim = HIDDEN_DIM
             wandb.config.freeze = FREEZE
             
-            self.model = models.ElectraQA(device, HIDDEN_DIM, dropout= DROPOUT,freeze= FREEZE)
+            self.model = models.ElectraQA(device, HIDDEN_DIM, FREEZE, dropout= DROPOUT)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
         
@@ -152,7 +152,7 @@ class QA_handler :
 
         self.model.train()
 
-        for batch_id, batch in enumerate(tqdm(iterator)):
+        for batch in tqdm(iterator):
 
             #zero the gradients 
             self.model.zero_grad(set_to_none=True)

@@ -12,7 +12,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
 
     #checks on input
     assert os.path.splitext(dataset)[1] == '.json', 'The dataset file should be in json format'
-    assert model_name == 'DrQA' or model_name == 'BERT' or model_name=='Electra', 'The only possibilities for model name are DrQA, BERT or Electra'
+    assert model_name == 'DrQA' or model_name == 'Bert' or model_name=='Electra', 'The only possibilities for model name are DrQA, Bert or Electra'
     assert task == 'qa' or task == 'qg', 'The only two tasks available are qa (Question-Answering) or qg (Question-Generation)'
     assert not(task == 'qg' and model_name == 'DrQA'), 'Question Generation task cannot be performed with DrQA model, use BERT as value instead'
     
@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument("-t",  "--task", dest="task", help="Task to perform [Question Answering or Question Generation]", choices=['qa','qg'], required=True)
-    parser.add_argument("-m", "--model", dest="model", help="Model to be trained", choices=['DrQA','BERT','Electra'], required=True)
+    parser.add_argument("-m", "--model", dest="model", help="Model to be trained", choices=['DrQA','Bert','Electra'], required=True)
     parser.add_argument("-d", "--dataset", dest="dataset", help ="the name of the file which contains the dataset", required=True, type = str)
     parser.add_argument("-l",  "--log", dest="log", help="Wheter to log on wandb or not", action='store_true')
     args = parser.parse_args()
