@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('dataset_path',  help='path to json dataset file')
-    parser.add_argument('-m', '--model', dest='model', choices=['DrQA','BERT','Electra'], default='Electra')
+    parser.add_argument('-m', '--model', dest='model', choices=['DrQA','BERTQA','ElectraQA'], default='ElectraQA')
     args = parser.parse_args()
 
     main(args.dataset_path, args.model)
