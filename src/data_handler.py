@@ -13,10 +13,10 @@ from tokenizers.implementations.bert_wordpiece import BertWordPieceTokenizer
 
 from tokenizers import  Tokenizer, Encoding
 from tokenizers.models import WordLevel
-from tokenizers.normalizers import Lowercase, Sequence, Strip, StripAccents
-from tokenizers.pre_tokenizers import Punctuation
+from tokenizers.normalizers import Lowercase, Strip, StripAccents, BertNormalizer
+from tokenizers.normalizers import Sequence as NormSequence
+from tokenizers.pre_tokenizers import Punctuation, Whitespace
 from tokenizers.pre_tokenizers import Sequence as PreSequence
-from tokenizers.pre_tokenizers import Whitespace
 from datasets import Dataset 
 
 import src.globals as globals
@@ -202,7 +202,7 @@ class RecurrentDataManager(DataManager):
     def _get_tokenizer(self):
 
         tokenizer = Tokenizer(WordLevel(self.vocab,unk_token=globals.UNK_TOKEN))
-        tokenizer.normalizer = Sequence([StripAccents(), Lowercase(), Strip()])
+        tokenizer.normalizer = BertNormalizer() #NormSequence([StripAccents(), Lowercase(), Strip()])
         tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
         tokenizer.enable_padding(direction="right", pad_id=self.vocab[globals.PAD_TOKEN], pad_type_id=1, pad_token=globals.PAD_TOKEN)
 

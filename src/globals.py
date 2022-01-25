@@ -2,12 +2,14 @@ import os
 
 
 DATA_FOLDER = os.path.join(os.getcwd(),"data") # directory containing the data
-LOG_NAME = "LOG"  #name of the logger 
+LOG_NAME = 'LOG'  #name of the logger 
 
 EMBEDDING_DIMENSION = 300   #vector dimension for glove embedding 
 
-UNK_TOKEN = "[UNK]"   #unknown token string key 
-PAD_TOKEN = "[PAD]"   #pad token string key 
+UNK_TOKEN = '[UNK]'   #unknown token string key 
+PAD_TOKEN = '[PAD]'   #pad token string key 
+SOS_TOKEN = '[SOS]'   #start of sequence token string key
+EOS_TOKEN = '[EOS]'   #end of sequence token string key
 
 TRAIN_VAL_SPLIT = 80         # percentage of train examples 
 
