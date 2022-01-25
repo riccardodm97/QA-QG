@@ -24,7 +24,7 @@ import src.globals as globals
 
 logger = logging.getLogger(globals.LOG_NAME)
 
-def load_embedding_model():
+def load_qa_embedding_model():
     """
     Loads a pre-trained word embedding model via gensim library
 

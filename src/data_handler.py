@@ -192,7 +192,7 @@ class RecurrentDataManager(DataManager):
         start_time = time.perf_counter()
         logger.info('init RecurrentDataManager')
 
-        self.emb_model, self.vocab = utils.load_embedding_model()    #loading embedding model first since it's needed for the tokenizer 
+        self.emb_model, self.vocab = utils.load_qa_embedding_model()    #loading embedding model first since it's needed for the tokenizer 
         super().__init__(dataset,device)
 
         end_time = time.perf_counter()
