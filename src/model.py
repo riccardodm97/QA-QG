@@ -181,3 +181,8 @@ class ElectraQA(nn.Module):
         end_scores = end_scores.masked_fill(answer_space_mask == 0, float('-inf'))
 
         return start_scores, end_scores
+
+
+class Seq2SeqQG(nn.Module):
+
+    pass 

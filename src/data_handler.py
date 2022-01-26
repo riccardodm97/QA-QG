@@ -417,6 +417,9 @@ class QGDataManager(DataManager):
             answer_encodings : list[Encoding] = self.enc_tokenizer.encode_batch(batch['answer'])
             question_encodings: list[Encoding] = self.dec_tokenizer.encode_batch(batch['question'])
 
+            starts = list(map(lambda x: x[0],batch['label_char']))
+            ends = list(map(lambda x: x[1],batch['label_char']))
+
             batch = {
                 'context_ids': torch.tensor([e.ids for e in context_encodings], device=self.device),
                 'answer_ids':torch.tensor([e.ids for e in answer_encodings], device=self.device),
@@ -424,6 +427,8 @@ class QGDataManager(DataManager):
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
                 'answer_mask': torch.tensor([e.attention_mask for e in answer_encodings], device=self.device),
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
+                'answer_token_start': torch.tensor([e.char_to_token(starts[i],1) for i,e in enumerate(context_encodings)], device=self.device),
+                'answer_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(context_encodings)], device=self.device),
                 
             }
 

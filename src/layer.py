@@ -1,6 +1,6 @@
 import numpy as np 
 import torch
-from torch import nn
+from torch import embedding, nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
@@ -15,7 +15,7 @@ class EmbeddingLayer(nn.Module):
         _ , self.embedding_dim = vectors.shape
         self.embed = nn.Embedding.from_pretrained(vectors, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer 
 
-        self.embed.weight.register_hook(hook) 
+        if hook is not None : self.embed.weight.register_hook(hook) 
     
     def forward(self, to_embed):
 
@@ -202,3 +202,46 @@ class BilinearAttentionLayer(nn.Module):
         scores = scores.masked_fill(context_mask == 0, float('-inf'))
         
         return scores
+
+
+class ContextEncoder(nn.Module):
+
+    def __init__(self, vectors, pad_idx, device, hidden_dim):
+        super().__init__()
+
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+
+        self.rnn = nn.LSTM(self.emb_layer.embedding_dim+1, hidden_dim, batch_first=True, bidirectional=True)
+
+    
+    def forward(self,context_ids, answ_start, answ_end):
+
+        #context_ids = [bs, ctx_len]
+        #answ_start = [bs]
+        #answ_end = [bs]
+
+        embeddings = self.emb_layer(context_ids)
+        # [bs, ctx_len, emb_dim]
+
+        a = torch.zeros(answ_start.size)
+        a[answ_start:answ_end] = 1.0 
+        torch.cat(embeddings,dim=1)
+
+        lstm_outputs, (hidden,cell) = self.rnn(embeddings)    #TODO pack padded ecc 
+        # [bs, ctx_len, hidden_dim*2]
+
+        return lstm_outputs, (hidden,cell)
+
+
+
+
+class AnswerEncoder(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+
+class Encoder(nn.Module):
+
+    def __init__(self):
+        super().__init__()

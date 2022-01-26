@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 
-from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager
+from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager, QGDataManager
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
@@ -297,3 +297,38 @@ class QA_handler :
                 torch.save(self.model.state_dict(), model_save_path)
             
         wandb.save(model_save_path)
+
+
+class QG_handler : 
+
+    def __init__(self, model_name, dataset_path, device):
+    
+        squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
+
+        self.data_manager : DataManager = QGDataManager(squad_dataset, device)
+
+        N_EPOCHS = 15
+        GRAD_CLIPPING = 10
+        BATCH_SIZE = 32
+        LR = 0.002
+        RANDOM_BATCH = False
+
+        #log model configuration   
+        wandb.config.n_epochs = N_EPOCHS
+        wandb.config.grad_clipping = GRAD_CLIPPING
+        wandb.config.batch_size = BATCH_SIZE
+        wandb.config.learning_rate = LR
+        wandb.config.random_batch = RANDOM_BATCH
+        
+        
+        self.model = None #TODO creare il modello 
+
+        self.optimizer = optim.Adamax(self.model.parameters(), lr=LR)
+
+        self.run_param = {
+            'n_epochs' : N_EPOCHS,
+            'grad_clipping' : GRAD_CLIPPING
+        }
+
+        self.criterion = nn.CrossEntropyLoss().to(device)
+        self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
