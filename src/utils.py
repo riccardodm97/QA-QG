@@ -12,8 +12,6 @@ import pandas as pd
 import numpy as np
 import torch 
 from torch import nn
-from torch.utils.data import DataLoader
-from torch.utils.data.sampler import RandomSampler, SequentialSampler, BatchSampler
 import torch.nn.functional as F
 
 import gensim.downloader as gloader
@@ -24,7 +22,8 @@ import src.globals as globals
 
 logger = logging.getLogger(globals.LOG_NAME)
 
-def load_qa_embedding_model():
+
+def load_glove_embedding():
     """
     Loads a pre-trained word embedding model via gensim library
 
@@ -32,46 +31,108 @@ def load_qa_embedding_model():
     start_time = time.perf_counter()
 
     model_name = "glove-wiki-gigaword-{}".format(globals.EMBEDDING_DIMENSION)
+
+    logger.info('downloading glove model (dim = %s)...',globals.EMBEDDING_DIMENSION)
+    embedding_model : KeyedVectors = gloader.load(model_name)
+    logger.info('glove loaded')
+    
+    end_time = time.perf_counter()
+    logger.info('downloaded in: %f',end_time-start_time)
+
+    return embedding_model
+
+def get_Glove_model_and_vocab():
+    """
+    Loads a pre-trained word embedding model via gensim library
+
+    """
     glove_model_path = os.path.join(globals.DATA_FOLDER, f"glove_vectors_{globals.EMBEDDING_DIMENSION}.txt")
+    
+    #if already stored in data, retrieve it 
+    if os.path.exists(glove_model_path): 
 
-    try:
+        logger.info('loading vectors (dim = %s) from file',globals.EMBEDDING_DIMENSION)
+        embedding_model = KeyedVectors.load_word2vec_format(glove_model_path, binary=True)
+    
+    else:
+        embedding_model = load_glove_embedding()
 
-        #if already stored in data, retrieve it 
-        if os.path.exists(glove_model_path): 
+        # unknown vector as the mean of all vectors
+        assert globals.UNK_TOKEN not in embedding_model, f"{globals.UNK_TOKEN} key already present"
+        unk = np.mean(embedding_model.vectors, axis=0)
+        if unk in embedding_model.vectors:
+            unk = np.random.uniform(low=-0.05, high=0.05, size=globals.EMBEDDING_DIMENSION)      
 
-            logger.info('loading embedding vectors (dim = %s) from file',globals.EMBEDDING_DIMENSION)
-            embedding_model = KeyedVectors.load_word2vec_format(glove_model_path, binary=True)
+        # pad vector as a zero vector
+        assert globals.PAD_TOKEN not in embedding_model, f"{globals.PAD_TOKEN} key already present"
+        pad = np.zeros((embedding_model.vectors.shape[1],))
+
+        #add newly created vectors to the model
+        embedding_model.add_vectors([globals.UNK_TOKEN,globals.PAD_TOKEN], [unk,pad])
+
+        embedding_model.allocate_vecattrs()    # library bug ?? 
+
+        embedding_model.save_word2vec_format(glove_model_path, binary=True)
+        logger.info('glove model saved to file in data directory')
+    
+    return embedding_model, embedding_model.key_to_index
+
+
+def build_embedding_matrix(type : str, vocab : dict) -> np.ndarray:
+
+    assert type in ['encoder','decoder']
+    emb_matrix_path = os.path.join(globals.DATA_FOLDER, f"{type}_emb_matrix")
+
+    if os.path.exists(emb_matrix_path): 
+        logger.info('loading embedding matrix from file')
+        embedding_matrix = np.load(emb_matrix_path,allow_pickle=True)
+    
+    else : 
+        logger.info('Building embedding matrix...')
+
+        emb_model = load_glove_embedding()
+        assert emb_model is not None, 'WARNING: empty embeddings model'
+
+        embedding_dimension = emb_model.vector_size      #how many numbers each emb vector is composed of                                                           
+        embedding_matrix = np.zeros((len(vocab), embedding_dimension+3), dtype=np.float32)   #create a matrix initialized with all zeros 
+
+        for word, idx in vocab.items():
+            if idx<4 : continue      #skip the first tokens as they are special tokens 
+            try:
+                embedding_vector = emb_model[word]
+            except (KeyError, TypeError):
+                embedding_vector = np.random.uniform(low=-0.05, high=0.05, size=embedding_dimension)
+
+            embedding_matrix[idx] = np.concatenate([embedding_vector,[0,0,0]])    #assign the retrived or the generated vector to the corresponding index 
         
-        else:
-            logger.info('downloading glove model (dim = %s)...',globals.EMBEDDING_DIMENSION)
-            embedding_model : KeyedVectors = gloader.load(model_name)
-            logger.info('glove loaded')
+        unk = np.mean(emb_model.vectors, axis=0)
+        if unk in emb_model.vectors:
+            unk = np.concatenate([np.random.uniform(low=-0.05, high=0.05,size=embedding_dimension),[0,0,0]])    
 
-            # unknown vector as the mean of all vectors
-            assert globals.UNK_TOKEN not in embedding_model, f"{globals.UNK_TOKEN} key already present"
-            unk = np.mean(embedding_model.vectors, axis=0)
-            if unk in embedding_model.vectors:
-                np.random.uniform(low=-0.05, high=0.05, size=globals.EMBEDDING_DIMENSION)      
+        embedding_matrix[vocab[globals.UNK_TOKEN]] = unk      # add the unk token embedding  
 
-            # pad vector as a zero vector
-            assert globals.PAD_TOKEN not in embedding_model, f"{globals.PAD_TOKEN} key already present"
-            pad = np.zeros((embedding_model.vectors.shape[1],))
+        embedding_matrix[vocab[globals.PAD_TOKEN],300] = 1.0
+        embedding_matrix[vocab[globals.SOS_TOKEN],301] = 1.0
+        embedding_matrix[vocab[globals.EOS_TOKEN],302] = 1.0
 
-            #add newly created vectors to the model
-            embedding_model.add_vectors([globals.UNK_TOKEN,globals.PAD_TOKEN], [unk,pad])
+        logger.info(f"Built embedding matrix with shape: {embedding_matrix.shape}")
 
-            embedding_model.allocate_vecattrs()    # library bug ?? 
+        np.save(emb_matrix_path,embedding_matrix,allow_pickle=True)
+        logger.info('embedding matrix saved to file in data directory')
 
-            embedding_model.save_word2vec_format(glove_model_path, binary=True)
-            logger.info('glove model saved to file in data directory')
-        
-        end_time = time.perf_counter()
-        logger.info('loading time: %f',end_time-start_time)
+    return embedding_matrix
 
-        return embedding_model, embedding_model.key_to_index
-        
-    except Exception as e:
-        raise e('Error')
+
+def load_bert_vocab():
+
+    logger.info('downloading BERT vocab from huggingface ...')
+    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
+
+    response = requests.get("https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt")
+    with open(VOCAB_PATH, mode='wb') as localfile:
+        localfile.write(response.content)
+
+    logger.info('loaded and stored in data folder')
 
 
 def set_random_seed():
@@ -81,32 +142,6 @@ def set_random_seed():
     np.random.seed(globals.RND_SEED)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-
- 
-def build_dataloader(dataset, batch_size : int, random : bool):
-
-    if random : 
-        sampler = BatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=False)
-    else:
-        sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
-    
-    return DataLoader(dataset,sampler=sampler,batch_size=None)
-
-
-def get_embedding_layer(weights_matrix : np.ndarray , pad_idx : int, device = 'cpu'):
-
-    matrix = torch.from_numpy(weights_matrix).to(device) 
-        
-    _ , embedding_dim = matrix.shape
-    embedding_layer = nn.Embedding.from_pretrained(matrix, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer and make it non-trainable
-
-    def tune_embedding(grad, words=1000):
-            grad[words:] = 0
-            return grad
-        
-    embedding_layer.weight.register_hook(tune_embedding)   
-
-    return embedding_layer, embedding_dim
 
 
 def setup_logging():
@@ -183,13 +218,4 @@ def remove_errors(df : pd.DataFrame):
     return df[~df['question_id'].isin(error_ids)]
 
 
-def load_bert_vocab():
 
-    logger.info('downloading BERT vocab from huggingface ...')
-    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
-
-    response = requests.get("https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt")
-    with open(VOCAB_PATH, mode='wb') as localfile:
-        localfile.write(response.content)
-
-    logger.info('loaded and stored in data folder')

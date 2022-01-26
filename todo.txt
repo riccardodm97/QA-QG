@@ -1,4 +1,14 @@
-TODO IMPORTANT
+TODO IMPORTANT QG 
+- tokenizer (context+answer e question) -> refactorare datahandler per gestire più di un tokenizer , enc token e dec_token
+- embedding matrix -> encoder e decoder , creare layer Embedding e toglierlo da utils 
+- utils : load glove separato e chiamato dalla funzione per DrQA e da quella per qg 
+- encoder
+- decoder 
+- seq2seq
+
+
+
+TODO IMPORTANT QA 
 
 - encodare dataset in dataframe ✔
 - creare custom class per data handling ✔
@@ -26,12 +36,12 @@ TODO IMPORTANT
 - save model ✔
 - compute_answers.py ✔
 - train-val split su title ✔
-- remove errors 
 - has label -> has_answers ✔
-- commentare codice 
-- rimuovere i #TODO ✔
-- pulire il codice 
 - non harcodare Bert in compute_answers ✔
+- rimuovere i #TODO ✔
+- remove errors 
+- pulire il codice 
+- commentare codice
 
 TODO SECONDARY
 - group answers by id ✘
@@ -93,6 +103,6 @@ DrQA model
 
 ASSUNZIONI 
 
-- non ci sono più risposte alla stessa domanda
-- le label (risposte) ci sono sempre 
-- va sempre splittato in train e val 
+- non ci sono più risposte alla stessa domanda  ✘
+- le label (risposte) ci sono sempre ✔
+- va sempre splittato in train e val ✔

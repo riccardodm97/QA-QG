@@ -15,14 +15,18 @@ class DrQA(nn.Module):
         
         self.device = device      
         self.num_directions = 2   #bidirectional LSTMs
-        
-        self.embedding_layer, self.embedding_dim = get_embedding_layer(weights_matrix, pad_idx, device)
 
-        self.context_bilstm = layer.StackedBiLSTM(self.embedding_dim * 2, hidden_dim, num_layers, dropout)
+        def tune_embedding(grad, words=1000):   #train only the first 1000 most frequent words 
+            grad[words:] = 0
+            return grad
         
-        self.align_embedding = layer.AlignQuestionEmbedding(self.embedding_dim)
+        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, device)
+
+        self.context_bilstm = layer.StackedBiLSTM(self.emb_layer.embedding_dim* 2, hidden_dim, num_layers, dropout)
         
-        self.question_encoding = layer.QuestionEncodingLayer(self.embedding_dim,hidden_dim,num_layers,dropout)
+        self.align_embedding = layer.AlignQuestionEmbedding(self.emb_layer.embedding_dim)
+        
+        self.question_encoding = layer.QuestionEncodingLayer(self.emb_layer.embedding_dim,hidden_dim,num_layers,dropout)
         
         self.bilinear_attn_start = layer.BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions, hidden_dim*num_layers*self.num_directions)
         
@@ -45,11 +49,11 @@ class DrQA(nn.Module):
         context_lengths = torch.count_nonzero(context_mask,dim=1)     # [bs]
         question_lengths = torch.count_nonzero(question_mask,dim=1)   # [bs]
         
-        ctx_embed = self.embedding_layer(context)
+        ctx_embed = self.emb_layer(context)
         ctx_embed = self.dropout(ctx_embed)
         # [bs, len_c, emb_dim]
         
-        qst_embed = self.embedding_layer(question)
+        qst_embed = self.emb_layer(question)
         qst_embed = self.dropout(qst_embed)
         # [bs, len_q, emb_dim]
 

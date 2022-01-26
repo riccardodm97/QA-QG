@@ -2,15 +2,15 @@ import json
 import os
 import logging 
 import time 
-
 from typing import Callable
 
 import numpy as np
 import pandas as pd
 import torch
 
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import RandomSampler, SequentialSampler, BatchSampler
 from tokenizers.implementations.bert_wordpiece import BertWordPieceTokenizer
-
 from tokenizers import  Tokenizer, Encoding
 from tokenizers.models import WordLevel
 from tokenizers.normalizers import Lowercase, Strip, StripAccents, NFD, BertNormalizer
@@ -155,8 +155,12 @@ class DataManager:
         dataset = getattr(self,split+'_hf_dataset')
         assert dataset, f'No {split} dataset present'
 
-        return utils.build_dataloader(dataset, batch_size, random)
-
+        if random : 
+            sampler = BatchSampler(RandomSampler(dataset), batch_size=batch_size, drop_last=False)
+        else:
+            sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
+    
+        return DataLoader(dataset,sampler=sampler,batch_size=None)
         
     
     def _build_hf_dataset(self, df : pd.DataFrame, has_answers : bool = True):  
@@ -192,7 +196,7 @@ class RecurrentDataManager(DataManager):
         start_time = time.perf_counter()
         logger.info('init RecurrentDataManager')
 
-        self.emb_model, self.vocab = utils.load_qa_embedding_model()    #loading embedding model first since it's needed for the tokenizer 
+        self.emb_model, self.vocab = utils.get_Glove_model_and_vocab()    #loading embedding model first since it's needed for the tokenizer 
         super().__init__(dataset,device)
 
         end_time = time.perf_counter()

@@ -1,8 +1,26 @@
-
+import numpy as np 
 import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+
+class EmbeddingLayer(nn.Module):
+
+    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, device = 'cpu'):
+        super().__init__()
+
+        vectors = torch.from_numpy(vectors).to(device) 
+        
+        _ , self.embedding_dim = vectors.shape
+        self.embed = nn.Embedding.from_pretrained(vectors, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer 
+
+        self.embed.weight.register_hook(hook) 
+    
+    def forward(self, to_embed):
+
+        embeddings = self.embed(to_embed)
+        return embeddings
 
 
 class AlignQuestionEmbedding(nn.Module):
@@ -118,7 +136,7 @@ class LinearAttentionLayer(nn.Module):
         attn_scores = attn_scores.view(question.shape[0], question.shape[1])
         # attn_scores = [bs, qtn_len]
         
-        attn_scores = attn_scores.masked_fill(question_mask == 0, -float('inf'))
+        attn_scores = attn_scores.masked_fill(question_mask == 0, float('-inf'))
         
         alpha = F.softmax(attn_scores, dim=1)
         # alpha = [bs, qtn_len]
@@ -181,6 +199,6 @@ class BilinearAttentionLayer(nn.Module):
         scores = scores.squeeze(2)
         # scores = [bs, ctx_len]
         
-        scores = scores.masked_fill(context_mask == 0, -float('inf'))
+        scores = scores.masked_fill(context_mask == 0, float('-inf'))
         
         return scores
