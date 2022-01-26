@@ -2,6 +2,7 @@ TODO IMPORTANT QG
 - tokenizer (context+answer e question) -> refactorare datahandler per gestire più di un tokenizer , enc token e dec_token
 - embedding matrix -> encoder e decoder , creare layer Embedding e toglierlo da utils 
 - utils : load glove separato e chiamato dalla funzione per DrQA e da quella per qg 
+- BertNormalizer 
 - encoder
 - decoder 
 - seq2seq
