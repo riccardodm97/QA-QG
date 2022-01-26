@@ -223,8 +223,8 @@ class ContextEncoder(nn.Module):
         embeddings = self.emb_layer(context_ids)
         # [bs, ctx_len, emb_dim]
 
-        a = torch.zeros(answ_start.size)
-        a[answ_start:answ_end] = 1.0 
+        a = torch.zeros((embeddings.shape[0],embeddings.shape[1],1))
+        a[answ_start:answ_end+1] = 1.0 
         torch.cat(embeddings,dim=1)
 
         lstm_outputs, (hidden,cell) = self.rnn(embeddings)    #TODO pack padded ecc 
