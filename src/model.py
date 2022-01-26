@@ -5,7 +5,6 @@ from transformers import BertModel, ElectraModel
 
 import src.layer as layer 
 import src.globals as globals 
-from src.utils import get_embedding_layer
 
 class DrQA(nn.Module):
     
