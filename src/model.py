@@ -1,3 +1,4 @@
+import random
 import torch
 from torch import nn
 
@@ -185,4 +186,53 @@ class ElectraQA(nn.Module):
 
 class Seq2SeqQG(nn.Module):
 
-    pass 
+    def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, device) :
+        super().__init__()
+
+        self.device = device
+        self.output_dim = output_dim
+
+        self.encoder = layer.Encoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device)
+        self.decoder = layer.Decoder(dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, device )
+
+        self.to(device)
+    
+    def get_model_name(self) -> str :
+        return 'Seq2SeqQG'
+    
+    def forward(self, inputs, teacher_force_ratio = 0.75):
+
+        ctx_ids = inputs['context_ids']
+        answ_ids = inputs['answer_ids']
+        qst_ids = inputs['question_ids']
+        ctx_mask = inputs['context_mask']
+        answ_mask = inputs['answer_mask']
+        qst_mask = inputs['question_mask']
+        answ_start = inputs['answer_token_start']
+        answ_end = inputs['answer_token_end']
+
+        batch_size = ctx_ids.shape[0]
+        trg_len = qst_ids.shape[1]
+
+        #tensor where to store predictions 
+        outputs = torch.zeros(batch_size, trg_len, self.output_dim).to(self.device)
+
+        enc_outputs, hidden = self.encoder(ctx_ids,answ_ids,answ_start, answ_end)
+
+        input = qst_ids[:,0]
+        cell = torch.zeros(hidden.size)
+
+        for word_idx in range(1,trg_len):
+
+            dec_out, hidden, cell = self.decoder(input, hidden, cell, enc_outputs)
+
+            outputs[:,word_idx,:] = dec_out
+
+            teacher_force = random.random() < teacher_force_ratio 
+
+            pred = dec_out.argmax(1)
+
+            input = qst_ids[:,word_idx] if teacher_force else pred
+        
+        return outputs
+

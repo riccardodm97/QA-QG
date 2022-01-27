@@ -1,3 +1,4 @@
+from turtle import forward
 import numpy as np 
 import torch
 from torch import nn
@@ -206,17 +207,16 @@ class BilinearAttentionLayer(nn.Module):
 
 class Encoder(nn.Module):
 
-    def __init__(self, vectors, pad_idx, device, enc_hidden_dim, dec_hidden_dim):
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device):
         super().__init__()
 
-        self.enc_hidden_dim = enc_hidden_dim 
-
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+        self.emb_dim = self.emb_layer.embedding_dim
 
-        self.ctx_rnn = nn.LSTM(self.emb_layer.embedding_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
-        self.answ_rnn = nn.LSTM(self.emb_layer.embedding_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.answ_rnn = nn.LSTM(self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
 
-        self.fc1 = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)
+        self.fc1 = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)  #TODO cambiare nomi 
         self.fc2 = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
 
         self.tanh = nn.Tanh()
@@ -242,7 +242,7 @@ class Encoder(nn.Module):
         return torch.cat((z,answ_embeds),dim=2)
 
     
-    def forward(self,context_ids, answer_ids, answ_start, answ_end):
+    def forward(self, context_ids, answer_ids, answ_start, answ_end):
 
         #context_ids = [bs, ctx_len]
         #answ_start = [bs]
@@ -255,26 +255,126 @@ class Encoder(nn.Module):
         # [bs, ctx_len, emb_dim+1]
 
         ctx_outputs, (ctx_hidden,ctx_cell) = self.ctx_rnn(augmented_emb)    #TODO pack padded ecc 
-        # [bs, ctx_len, hidden_dim*2]
+        # [bs, ctx_len, enc_hidden_dim*2]
 
         answ_embeds = self.emb_layer(answer_ids)
         # [bs, answ_len, emb_dim]
 
         answ_ctx = self.ctx2answ(answ_embeds,ctx_outputs,answ_start,answ_end)
-        # [bs, answ_len, hidden_dim*2 + emb_dim]
+        # [bs, answ_len, enc_hidden_dim*2 + emb_dim]
 
         answ_outputs, (answ_hidden,answ_cell) = self.answ_rnn(answ_ctx)
-        # [bs, anw_len, hidden_dim*2]
+        # [bs, anw_len, enc_hidden_dim*2]
 
-        answ_reduced = torch.mean(answ_outputs,dim=1) # [bs, hidden_dim*2]
-        ctx_reduced = torch.mean(ctx_outputs,dim=1) # [bs, hidden_dim*2]                 #.unsqueeze(1).expand(projected_answ.size())  
+        answ_reduced = torch.mean(answ_outputs,dim=1) # [bs, enc_hidden_dim*2]
+        ctx_reduced = torch.mean(ctx_outputs,dim=1) # [bs, enc_hidden_dim*2]              
 
-        projected_answ = self.fc1(answ_reduced)  # [bs, hidden_dim*2]
+        projected_answ = self.fc1(answ_reduced)  
+        # [bs, enc_hidden_dim*2]
 
-        r = torch.add(projected_answ,ctx_reduced)
-        # [bs, hidden_dim*2]
+        ctx_answ_fusion = torch.add(projected_answ,ctx_reduced)
+        # [bs, enc_hidden_dim*2]
 
-        enc_hidden = self.tanh(self.fc2(r))
-        # [bs, dec_dim]
+        hidden = self.tanh(self.fc2(ctx_answ_fusion))
+        # [bs, dec_hidden_dim]
 
-        return ctx_outputs, enc_hidden
+        return ctx_outputs, hidden
+
+
+class Attention(nn.Module):
+
+    def __init__(self, dec_hidden_dim, enc_hidden_dim):
+        super().__init__()
+
+        self.fc1 = nn.Linear(dec_hidden_dim + (enc_hidden_dim*2), dec_hidden_dim)
+        self.fc2 = nn.Linear(dec_hidden_dim, 1, bias=False)   #TODO bias 
+
+        self.tanh = nn.Tanh()
+
+
+    def forward(self, hidden, outputs, ):
+
+        #outputs = [bs, ctx_len, enc_hidden_dim*2]
+        #hidden = [bs, dec_hidden_dim]
+
+        hidden = hidden.unsqueeze(1).repeat(1,outputs.shape[1],1)
+        # [bs, ctx_len, dec_hidden_dim]
+
+        temp1 = self.fc1(torch.cat((hidden,outputs), dim=2)) 
+        temp2 = self.tanh(temp1)
+        # [bs, ctx_len, dec_hidden_dim]
+
+        a = self.fc2(temp2).squeeze(2)
+        # [bs, ctx_len]
+
+        #TODO MASK FILL 
+
+        soft_a = F.softmax(a, dim=1)
+        # [bs, ctx_len]
+
+        weighted_outputs = torch.bmm(soft_a.unsqueeze(1),outputs)
+        # [bs, 1, enc_hidden_dim*2]
+
+        return weighted_outputs
+
+
+class Decoder(nn.Module):
+
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, device):
+        super().__init__()
+
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+        self.emb_dim = self.emb_layer.embedding_dim
+
+        self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
+
+        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True, bidirectional=True)
+
+        self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)   
+
+    
+    def forward(self, input, prev_hidden, prev_cell, enc_outputs):
+
+        #input = [bs]
+        #prev_hidden = [bs, dec_hidden_dim]
+        #prev_cell = [bs, dec_hidden_dim]
+        #enc_outputs = [bs, ctx_len, enc_hidden_dim*2]
+
+        input = input.unsqueeze(1)
+        # [bs, 1]
+
+        qst_embeds = self.emb_layer(input)
+        # [bs, 1, emb_dim]
+
+        ctx_vector = self.attention(prev_hidden, enc_outputs)   #TODO rename
+        # [bs, 1, enc_hidden_dim*2]
+
+        rnn_input_0 = torch.cat((qst_embeds,ctx_vector), dim=2)
+        # [bs, 1, (enc_hidden_dim*2) + emb_dim]
+
+        rnn_input_1 = prev_hidden.unsqueeze(0), prev_cell.unsqueeze(0)
+
+        rnn_out , (rnn_hidden, rnn_cell) = self.rnn(rnn_input_0,rnn_input_1)
+        # rnn_out = [bs, 1, dec_hidden_dim]
+
+        rnn_out = rnn_out.squeeze(1)          #[bs, dec_hidden_dim]
+        ctx_vector = ctx_vector.squeeze(1)    #[bs, enc_hidden_dim*2]
+        rnn_hidden = rnn_hidden.squeeze(0)
+        rnn_cell = rnn_cell.squeeze(0)
+
+        dec_out = self.fc_out(torch.cat(rnn_out,ctx_vector), dim=2)
+        # [bs, dec_output_dim]
+
+        return dec_out, rnn_hidden, rnn_cell
+
+
+
+
+
+
+
+
+
+
+
+
