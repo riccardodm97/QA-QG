@@ -1,6 +1,6 @@
 import numpy as np 
 import torch
-from torch import embedding, nn
+from torch import nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
@@ -204,44 +204,77 @@ class BilinearAttentionLayer(nn.Module):
         return scores
 
 
-class ContextEncoder(nn.Module):
+class Encoder(nn.Module):
 
-    def __init__(self, vectors, pad_idx, device, hidden_dim):
+    def __init__(self, vectors, pad_idx, device, enc_hidden_dim, dec_hidden_dim):
         super().__init__()
+
+        self.enc_hidden_dim = enc_hidden_dim 
 
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
 
-        self.rnn = nn.LSTM(self.emb_layer.embedding_dim+1, hidden_dim, batch_first=True, bidirectional=True)
+        self.ctx_rnn = nn.LSTM(self.emb_layer.embedding_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.answ_rnn = nn.LSTM(self.emb_layer.embedding_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
+
+        self.fc1 = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)
+        self.fc2 = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
+
+        self.tanh = nn.Tanh()
+
+        #TODO dropout 
+    
+    def augment_embeddings(self,embeddings,answ_start,answ_end):
+
+        t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1])).float()   #TODO rename e spiegare cosa facciamo 
+        t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1])).float()
+        m = torch.mul(t1,t2).unsqueeze(-1)
+        augmented_emb = torch.cat((embeddings,m),dim=2)
+
+        return augmented_emb
+    
+    def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
+
+        z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.hidden_dim*2)    #TODO rename
+
+        for i in range(answ_embeds.shape[0]):
+            z[i,0:answ_end[i]+1-answ_start[i],:] = ctx_out[i,answ_start[i]:answ_end[i]+1,:]   #TODO no for loop
+
+        return torch.cat((z,answ_embeds),dim=2)
 
     
-    def forward(self,context_ids, answ_start, answ_end):
+    def forward(self,context_ids, answer_ids, answ_start, answ_end):
 
         #context_ids = [bs, ctx_len]
         #answ_start = [bs]
         #answ_end = [bs]
 
-        embeddings = self.emb_layer(context_ids)
+        ctx_embeds = self.emb_layer(context_ids)
         # [bs, ctx_len, emb_dim]
+        
+        augmented_emb = self.augment_embeddings(ctx_embeds,answ_start,answ_end)
+        # [bs, ctx_len, emb_dim+1]
 
-        a = torch.zeros((embeddings.shape[0],embeddings.shape[1],1))
-        a[answ_start:answ_end+1] = 1.0 
-        torch.cat(embeddings,dim=1)
-
-        lstm_outputs, (hidden,cell) = self.rnn(embeddings)    #TODO pack padded ecc 
+        ctx_outputs, (ctx_hidden,ctx_cell) = self.ctx_rnn(augmented_emb)    #TODO pack padded ecc 
         # [bs, ctx_len, hidden_dim*2]
 
-        return lstm_outputs, (hidden,cell)
+        answ_embeds = self.emb_layer(answer_ids)
+        # [bs, answ_len, emb_dim]
 
+        answ_ctx = self.ctx2answ(answ_embeds,ctx_outputs,answ_start,answ_end)
+        # [bs, answ_len, hidden_dim*2 + emb_dim]
 
+        answ_outputs, (answ_hidden,answ_cell) = self.answ_rnn(answ_ctx)
+        # [bs, anw_len, hidden_dim*2]
 
+        answ_reduced = torch.mean(answ_outputs,dim=1) # [bs, hidden_dim*2]
+        ctx_reduced = torch.mean(ctx_outputs,dim=1) # [bs, hidden_dim*2]                 #.unsqueeze(1).expand(projected_answ.size())  
 
-class AnswerEncoder(nn.Module):
+        projected_answ = self.fc1(answ_reduced)  # [bs, hidden_dim*2]
 
-    def __init__(self):
-        super().__init__()
+        r = torch.add(projected_answ,ctx_reduced)
+        # [bs, hidden_dim*2]
 
+        enc_hidden = self.tanh(self.fc2(r))
+        # [bs, dec_dim]
 
-class Encoder(nn.Module):
-
-    def __init__(self):
-        super().__init__()
+        return ctx_outputs, enc_hidden
