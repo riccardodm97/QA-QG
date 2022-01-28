@@ -19,7 +19,7 @@ def main(task : str, model_name : str, dataset : str, log : bool):
     #setups 
     utils.set_random_seed()
     logger = utils.setup_logging()
-    device = 'cpu' #utils.get_device() 
+    device = utils.get_device() 
 
     #setup wandb 
     mode = None if log else 'disabled'

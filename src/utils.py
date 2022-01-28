@@ -115,7 +115,7 @@ def build_embedding_matrix(type : str, vocab : dict) -> np.ndarray:
         embedding_matrix[vocab[globals.SOS_TOKEN],301] = 1.0
         embedding_matrix[vocab[globals.EOS_TOKEN],302] = 1.0
 
-        logger.info(f"Built embedding matrix with shape: {embedding_matrix.shape}")
+        logger.info(f"built embedding matrix with shape: {embedding_matrix.shape}")
 
         np.save(emb_matrix_path,embedding_matrix,allow_pickle=True)
         logger.info('embedding matrix saved to file in data directory')
