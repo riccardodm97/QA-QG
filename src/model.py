@@ -184,7 +184,7 @@ class ElectraQA(nn.Module):
         return start_scores, end_scores
 
 
-class Seq2SeqQG(nn.Module):
+class Seq2Seq(nn.Module):
 
     def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, device) :
         super().__init__()
@@ -198,7 +198,7 @@ class Seq2SeqQG(nn.Module):
         self.to(device)
     
     def get_model_name(self) -> str :
-        return 'Seq2SeqQG'
+        return 'Seq2Seq'
     
     def forward(self, inputs, teacher_force_ratio = 0.75):
 

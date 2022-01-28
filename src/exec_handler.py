@@ -330,7 +330,7 @@ class QG_handler :
         enc_embeddings = self.data_manager.enc_vectors
         dec_embeddings = self.data_manager.dec_vectors
         
-        self.model = models.Seq2SeqQG(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,device)
+        self.model = models.Seq2Seq(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,device)
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=LR)
 
