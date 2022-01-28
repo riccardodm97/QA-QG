@@ -81,7 +81,7 @@ def get_Glove_model_and_vocab():
 def build_embedding_matrix(type : str, vocab : dict) -> np.ndarray:
 
     assert type in ['encoder','decoder']
-    emb_matrix_path = os.path.join(globals.DATA_FOLDER, f"{type}_emb_matrix")
+    emb_matrix_path = os.path.join(globals.DATA_FOLDER, f"{type}_emb_matrix.npy")
 
     if os.path.exists(emb_matrix_path): 
         logger.info('loading embedding matrix from file')

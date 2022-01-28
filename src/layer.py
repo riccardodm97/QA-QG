@@ -210,11 +210,14 @@ class Encoder(nn.Module):
     def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device):
         super().__init__()
 
+        self.enc_hidden_dim = enc_hidden_dim
+        self.dec_hidden_dim = dec_hidden_dim
+
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
-        self.answ_rnn = nn.LSTM(self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.answ_rnn = nn.LSTM((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
 
         self.fc1 = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)  #TODO cambiare nomi 
         self.fc2 = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
@@ -234,7 +237,7 @@ class Encoder(nn.Module):
     
     def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
 
-        z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.hidden_dim*2)    #TODO rename
+        z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.enc_hidden_dim*2)    #TODO rename
 
         for i in range(answ_embeds.shape[0]):
             z[i,0:answ_end[i]+1-answ_start[i],:] = ctx_out[i,answ_start[i]:answ_end[i]+1,:]   #TODO no for loop
@@ -328,7 +331,7 @@ class Decoder(nn.Module):
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
 
-        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True, bidirectional=True)
+        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True)
 
         self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)   #TODO name 
 
@@ -362,7 +365,7 @@ class Decoder(nn.Module):
         rnn_hidden = rnn_hidden.squeeze(0)
         rnn_cell = rnn_cell.squeeze(0)
 
-        dec_out = self.fc_out(torch.cat(rnn_out,ctx_vector), dim=2)
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=1))
         # [bs, dec_output_dim]
 
         return dec_out, rnn_hidden, rnn_cell

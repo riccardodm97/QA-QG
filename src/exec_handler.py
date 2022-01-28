@@ -375,7 +375,7 @@ class QG_handler :
 
             pred = utils.compute_qg_predictions(raw_pred[:,1:])   
 
-            batch_metrics = qg_evaluate(pred.cpu(),batch['question_ids'][:,1:].cpu(),batch['question_mask'].cpu(),self.data_manager.dec_tokenizer)
+            batch_metrics = qg_evaluate(pred.cpu(),batch['question_ids'][:,1:].cpu(),batch['question_mask'][:,1:].cpu(),self.data_manager.dec_tokenizer)
 
             batch_metrics['loss'] = loss.item()
             
@@ -402,7 +402,7 @@ class QG_handler :
             
             for batch in tqdm(iterator):
 
-                raw_pred = self.model(batch)
+                raw_pred = self.model(batch,teacher_force_ratio = 0)
 
                 predictions = raw_pred[:,1:].contiguous().view(-1,raw_pred.shape[-1])
                 ground_truth = batch['question_ids'][:,1:].contiguous().view(-1)
@@ -411,7 +411,7 @@ class QG_handler :
 
                 pred = utils.compute_qg_predictions(raw_pred[:,1:])   
 
-                batch_metrics = qg_evaluate(pred.cpu(),batch['question_ids'][:,1:].cpu(),batch['question_mask'].cpu(),self.data_manager.dec_tokenizer)
+                batch_metrics = qg_evaluate(pred.cpu(),batch['question_ids'][:,1:].cpu(),batch['question_mask'][:,1:].cpu(),self.data_manager.dec_tokenizer)
 
                 batch_metrics['loss'] = loss.item()
                 

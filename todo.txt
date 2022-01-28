@@ -15,6 +15,7 @@ TODO IMPORTANT QG
 - testare tutto debug 
 - beam search / eval 
 - init weights 
+- ordinare i dataloader per evitare troppo pad 
 
 
 

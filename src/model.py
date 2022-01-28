@@ -220,7 +220,7 @@ class Seq2Seq(nn.Module):
         enc_outputs, hidden = self.encoder(ctx_ids,answ_ids,answ_start, answ_end)
 
         input = qst_ids[:,0]    #TODO shape ? squeeze ? 
-        cell = torch.zeros(hidden.size)
+        cell = torch.zeros(hidden.size())
 
         for word_idx in range(1,trg_len):
 
@@ -230,7 +230,7 @@ class Seq2Seq(nn.Module):
 
             teacher_force = random.random() < teacher_force_ratio 
 
-            pred = dec_out.argmax(1)
+            pred = dec_out.argmax(dim=1)
 
             input = qst_ids[:,word_idx] if teacher_force else pred
         
