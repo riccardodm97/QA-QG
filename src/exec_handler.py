@@ -375,7 +375,7 @@ class QG_handler :
 
             pred = utils.compute_qg_predictions(raw_pred[:,1:])   
 
-            batch_metrics = qg_evaluate(pred.cpu(),batch['question_ids'][:,1:].cpu(),self.data_manager.dec_tokenizer)
+            batch_metrics = qg_evaluate(pred.cpu(),batch['question_ids'][:,1:].cpu(),batch['question_mask'].cpu(),self.data_manager.dec_tokenizer)
 
             batch_metrics['loss'] = loss.item()
             
@@ -386,7 +386,9 @@ class QG_handler :
         end_time = time.perf_counter()
         metrics['epoch_time'] = end_time-start_time
 
-        return utils.build_avg_dict('train',metrics)
+        metrics['perplexity'] = torch.exp(torch.mean(torch.tensor(metrics['loss']))).item()
+
+        return utils.build_avg_dict('train', metrics)
 
     
     def val_loop(self, iterator):
@@ -400,30 +402,18 @@ class QG_handler :
             
             for batch in tqdm(iterator):
 
-                pred_start_raw, pred_end_raw = self.model(batch)
+                raw_pred = self.model(batch)
 
-                true_start, true_end = batch['label_token_start'], batch['label_token_end']
+                predictions = raw_pred[:,1:].contiguous().view(-1,raw_pred.shape[-1])
+                ground_truth = batch['question_ids'][:,1:].contiguous().view(-1)
 
-                start_loss = self.criterion(pred_start_raw,true_start) 
-                end_loss = self.criterion(pred_end_raw,true_end)
+                loss = self.criterion(predictions,ground_truth) 
 
-                total_loss = (start_loss + end_loss) / 2
+                pred = utils.compute_qg_predictions(raw_pred[:,1:])   
 
-                pred_start, pred_end = utils.compute_predictions(pred_start_raw,pred_end_raw)
+                batch_metrics = qg_evaluate(pred.cpu(),batch['question_ids'][:,1:].cpu(),batch['question_mask'].cpu(),self.data_manager.dec_tokenizer)
 
-                to_eval = OrderedDict ({
-                    'pred_start' : pred_start.cpu(),
-                    'pred_end' : pred_end.cpu(),
-                    'true_start' : true_start.cpu(),
-                    'true_end' : true_end.cpu(),
-                    'offsets' : batch['offsets'],
-                    'context' : batch['context_text'],
-                    'answer' : batch['answer_text']
-                    })
-
-                batch_metrics = qa_evaluate(to_eval)
-
-                batch_metrics['loss'] = total_loss.item()
+                batch_metrics['loss'] = loss.item()
                 
                 #append all values of batch metrics to the corresponid element in metrics 
                 for k,v in batch_metrics.items():
@@ -432,7 +422,9 @@ class QG_handler :
         end_time = time.perf_counter()
         metrics['epoch_time'] = end_time-start_time
 
-        return utils.compute_avg_dict('val',metrics)
+        metrics['perplexity'] = torch.exp(torch.mean(torch.tensor(metrics['loss']))).item()
+
+        return utils.build_avg_dict('val', metrics)
 
     
     def train_and_eval(self):
@@ -455,14 +447,12 @@ class QG_handler :
             end_time = time.perf_counter()
 
             logger.info('epoch %d, tot time for train and eval: %f',epoch+1,end_time-start_time)
-            logger.info('train: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f, num_acc_s %f, num_acc_e %f',
-                        train_metrics["train/loss"], train_metrics["train/accuracy"],train_metrics["train/f1"], train_metrics["train/em"], 
-                        train_metrics["train/mean_start_dist"],train_metrics["train/mean_end_dist"],
-                        train_metrics['train/numerical_accuracy_start'],train_metrics['train/numerical_accuracy_end'])
-            logger.info('val: loss %f, accuracy %f, f1 %f, em %f, s_dist %f, e_dist %f, num_acc_s %f, num_acc_e %f',
-                        val_metrics["val/loss"], val_metrics["val/accuracy"],val_metrics["val/f1"], val_metrics["val/em"], 
-                        val_metrics["val/mean_start_dist"],val_metrics["val/mean_end_dist"],
-                        val_metrics['val/numerical_accuracy_start'],val_metrics['val/numerical_accuracy_end'])           
+            logger.info('train: loss %f, f1 %f, num_acc %f, bleu %f, perplexity %f',
+                        train_metrics["train/loss"], train_metrics["train/f1"],train_metrics["train/num_acc"], train_metrics["train/bleu"], 
+                        train_metrics["train/perplexity"])
+            logger.info('val: loss %f, f1 %f, num_acc %f, bleu %f, perplexity %f',
+                        val_metrics["val/loss"], val_metrics["val/f1"],val_metrics["val/num_acc"], val_metrics["val/bleu"], 
+                        val_metrics["val/perplexity"])           
 
             metrics.update(train_metrics)
             metrics.update(val_metrics)

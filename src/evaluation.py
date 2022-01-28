@@ -9,6 +9,7 @@ import string
 from collections import namedtuple, Counter, defaultdict
 
 from tokenizers import  Tokenizer
+from datasets import load_metric
 
 
 def normalize_answer(s):
@@ -106,4 +107,30 @@ def qa_evaluate(data : dict) -> dict:
 
 def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
 
-    pass
+    metrics = defaultdict(list)
+
+    true_text = tokenizer.decode_batch(true.tolist())
+    pred_text = tokenizer.decode_batch(pred.tolist())
+
+    metric = load_metric('bleu')
+
+    for t,p in zip(true_text,pred_text):
+
+      acc, prec, rec = accuracy_precision_recall_text(t, p)
+      f1 = f1_score(prec, rec)
+      m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]])
+
+      metrics["f1"].append(f1)
+      metrics["bleu"].append(m['bleu'])
+    
+    average_metrics = {k: np.mean(v) for k, v in metrics.items()}
+
+    num_acc = pred.eq(true).masked_select(pad_mask.bool()).float().mean().item()
+
+    average_metrics['num_acc'] = num_acc
+
+    return average_metrics
+
+
+
+
