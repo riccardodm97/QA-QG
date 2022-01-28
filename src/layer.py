@@ -300,7 +300,7 @@ class Attention(nn.Module):
         hidden = hidden.unsqueeze(1).repeat(1,outputs.shape[1],1)
         # [bs, ctx_len, dec_hidden_dim]
 
-        temp1 = self.fc1(torch.cat((hidden,outputs), dim=2)) 
+        temp1 = self.fc1(torch.cat((hidden,outputs), dim=2))   #TODO RENAME TEMP 
         temp2 = self.tanh(temp1)
         # [bs, ctx_len, dec_hidden_dim]
 
@@ -330,7 +330,7 @@ class Decoder(nn.Module):
 
         self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True, bidirectional=True)
 
-        self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)   
+        self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)   #TODO name 
 
     
     def forward(self, input, prev_hidden, prev_cell, enc_outputs):

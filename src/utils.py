@@ -174,7 +174,7 @@ def get_run_id():
     return datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
 
  
-def compute_predictions(starts,ends):    
+def compute_qa_predictions(starts,ends):    
     
     _, len_txt = starts.size()
 
@@ -197,8 +197,14 @@ def compute_predictions(starts,ends):
 
     return s_idx, e_idx
 
+def compute_qg_predictions(raw_pred):
 
-def compute_avg_dict(mode : str, metrics : dict) -> dict :
+    pred_logit = F.log_softmax(raw_pred, dim=2)
+
+    return pred_logit.argmax(dim=2) 
+
+
+def build_avg_dict(mode : str, metrics : dict) -> dict :
 
     def prepend_mode(key : str):
         return mode + '/' + key

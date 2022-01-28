@@ -6,8 +6,9 @@ import torch
 import numpy as np
 import re
 import string
-
 from collections import namedtuple, Counter, defaultdict
+
+from tokenizers import  Tokenizer
 
 
 def normalize_answer(s):
@@ -101,3 +102,8 @@ def qa_evaluate(data : dict) -> dict:
     average_metrics['numerical_accuracy_end'] = torch.sum(data['pred_end'] == data['true_end'])/(data['true_end'].size(dim=0))
 
     return average_metrics
+
+
+def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
+
+    pass

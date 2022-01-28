@@ -13,6 +13,9 @@ TODO IMPORTANT QG
 - loss function avoid special tokens 
 - qg_hanlder
 - testare tutto debug 
+- beam search / eval 
+- init weights 
+
 
 
 
