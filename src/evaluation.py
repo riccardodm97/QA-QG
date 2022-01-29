@@ -11,6 +11,9 @@ from collections import namedtuple, Counter, defaultdict
 from tokenizers import  Tokenizer
 from datasets import load_metric
 
+import src.globals as globals
+import logging 
+logger = logging.getLogger(globals.LOG_NAME)
 
 def normalize_answer(s):
   """Lower text and remove punctuation, articles and extra whitespace."""
@@ -118,7 +121,13 @@ def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
 
       acc, prec, rec = accuracy_precision_recall_text(t, p)
       f1 = f1_score(prec, rec)
-      m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]])
+      p_token = get_tokens(p)
+      t_token = get_tokens(t)
+      message_pred = "Strings in Predicted: " + " ".join(p_token)
+      logger.info(message_pred)                                  
+      message_true = "Strings in Predicted: " + " ".join(t_token)
+      logger.info(message_true)    
+      m = metric.compute(predictions=[p_token],references=[[t_token]])
 
       metrics["f1"].append(f1)
       metrics["bleu"].append(m['bleu'])
