@@ -316,6 +316,7 @@ class QG_handler :
         GRAD_CLIPPING = 10
         BATCH_SIZE = 32
         LR = 0.001
+        DROPOUT = 0
         RANDOM_BATCH = False
 
         #log model configuration   
@@ -323,6 +324,7 @@ class QG_handler :
         wandb.config.grad_clipping = GRAD_CLIPPING
         wandb.config.batch_size = BATCH_SIZE
         wandb.config.learning_rate = LR
+        wandb.config.dropout = DROPOUT
         wandb.config.random_batch = RANDOM_BATCH
 
         pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
@@ -330,7 +332,7 @@ class QG_handler :
         enc_embeddings = self.data_manager.enc_vectors
         dec_embeddings = self.data_manager.dec_vectors
         
-        self.model = models.Seq2Seq(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,device)
+        self.model = models.Seq2Seq(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,DROPOUT,device)
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=LR)
 

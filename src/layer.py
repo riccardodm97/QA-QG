@@ -206,7 +206,7 @@ class BilinearAttentionLayer(nn.Module):
 
 class Encoder(nn.Module):
 
-    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device, dropout):
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device):
         super().__init__()
 
         self.device = device
@@ -330,7 +330,7 @@ class Attention(nn.Module):
 
 class Decoder(nn.Module):
 
-    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, device):
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
         super().__init__()
 
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
@@ -340,7 +340,9 @@ class Decoder(nn.Module):
 
         self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True)
 
-        self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)   #TODO name 
+        self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)  
+
+        self.dropout = nn.Dropout(dropout)
 
     
     def forward(self, input, prev_hidden, prev_cell, enc_outputs, enc_mask):

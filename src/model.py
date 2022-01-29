@@ -186,14 +186,14 @@ class ElectraQA(nn.Module):
 
 class Seq2Seq(nn.Module):
 
-    def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, device) :
+    def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
         super().__init__()
 
         self.device = device
         self.output_dim = output_dim
 
-        self.encoder = layer.Encoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device)
-        self.decoder = layer.Decoder(dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, device )
+        self.encoder = layer.Encoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
+        self.decoder = layer.Decoder(dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device )
 
         self.to(device)
     
