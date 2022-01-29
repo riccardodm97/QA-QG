@@ -149,7 +149,13 @@ class DataManager:
             else :
                 break
         
-        return df[df['split']=='train'], df[df['split']=='val']
+        #sort the dataframe in order to have the examples with similar context lenght close toghet
+        df.sort_values('context',key=lambda x:x.str.len(), ignore_index=True, inplace=True)
+
+        df_train = df[df['split']=='train'].reset_index(drop=True)
+        df_val = df[df['split']=='val'].reset_index(drop=True)
+        
+        return df_train, df_val 
 
     
     def get_dataloader(self, split : str, batch_size : int, random : bool = False):

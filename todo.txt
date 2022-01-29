@@ -6,16 +6,21 @@ TODO IMPORTANT QG
 - encoder ✔
 - decoder ✔
 - seq2seq ✔
+- ordinare il dataset per evitare troppo pad ✔
+- loss function avoid special tokens ✔
+- train val loop ✔
+- qg_hanlder ✔
+- dropout 
+- hidden_dims 
 - pack_padded_sequence , pad_packed_sequence
-- mask pad 
+- mask pad attention
+- ancoder di bentrevett
+- fix ha paper (no mean su lstm answer outputs ma ultimo hidden)
 - hook train embeddings
-- train val loop 
-- loss function avoid special tokens 
-- qg_hanlder
+- init weights 
 - testare tutto debug 
 - beam search / eval 
-- init weights 
-- ordinare i dataloader per evitare troppo pad 
+
 
 
 
