@@ -33,7 +33,7 @@ def normalize_answer(s):
 
 def get_tokens(s):
   if not s: return []
-  return s.split()    #normalize_answer(s).split() #TODO: debug
+  return normalize_answer(s).split() #TODO: debug
 
 def compute_exact(true, pred):
     return float(normalize_answer(true) == normalize_answer(pred))
@@ -118,10 +118,14 @@ def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
 
       acc, prec, rec = accuracy_precision_recall_text(t, p)
       f1 = f1_score(prec, rec)
-      m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]])
+
+      if len(get_tokens(p)) != 0 :
+        m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]])
+        bleu = m['bleu']
+      else : bleu = 0.0
 
       metrics["f1"].append(f1)
-      metrics["bleu"].append(m['bleu'])
+      metrics["bleu"].append(bleu)
     
     average_metrics = {k: np.mean(v) for k, v in metrics.items()}
 
