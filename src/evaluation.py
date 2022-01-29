@@ -11,9 +11,6 @@ from collections import namedtuple, Counter, defaultdict
 from tokenizers import  Tokenizer
 from datasets import load_metric
 
-import src.globals as globals
-import logging 
-logger = logging.getLogger(globals.LOG_NAME)
 
 def normalize_answer(s):
   """Lower text and remove punctuation, articles and extra whitespace."""

@@ -54,8 +54,7 @@ if __name__ == '__main__':
     parser.add_argument("-m", "--model", dest="model", help="Model to be trained", choices=['DrQA','Bert','Electra','Seq2Seq'], required=True)
     parser.add_argument("-d", "--dataset", dest="dataset", help ="the name of the file which contains the dataset", required=True, type = str)
     parser.add_argument("-l",  "--log", dest="log", help="Wheter to log on wandb or not", action='store_true')
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
 
-    # main(args.task,args.model,args.dataset,args.log)
-    main('qg','Seq2Seq','training_set.json',False)
+    main(args.task,args.model,args.dataset,args.log)
