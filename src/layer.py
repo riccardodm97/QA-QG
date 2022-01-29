@@ -290,7 +290,7 @@ class Attention(nn.Module):
     def __init__(self, dec_hidden_dim, enc_hidden_dim):
         super().__init__()
 
-        self.fc1 = nn.Linear(dec_hidden_dim + (enc_hidden_dim*2), dec_hidden_dim)
+        self.fc1 = nn.Linear(dec_hidden_dim + (enc_hidden_dim*2), dec_hidden_dim) #TODO rename 
         self.fc2 = nn.Linear(dec_hidden_dim, 1, bias=False)   #TODO bias 
 
         self.tanh = nn.Tanh()
