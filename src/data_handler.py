@@ -388,7 +388,7 @@ class QGDataManager(DataManager):
         enc_tokenizer = Tokenizer(WordLevel(unk_token=globals.UNK_TOKEN))
         enc_tokenizer.normalizer = BertNormalizer(handle_chinese_chars=False) 
         enc_tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
-        enc_tokenizer.post_processor = processor 
+        # enc_tokenizer.post_processor = processor 
 
         dec_tokenizer = Tokenizer(WordLevel(unk_token=globals.UNK_TOKEN))
         dec_tokenizer.normalizer = BertNormalizer(handle_chinese_chars=False) 

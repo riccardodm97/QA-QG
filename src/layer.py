@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 
 
 class EmbeddingLayer(nn.Module):
@@ -219,8 +219,8 @@ class Encoder(nn.Module):
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
-        self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True, dropout=dropout)
-        self.answ_rnn = nn.LSTM((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True, dropout=dropout)
+        self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.answ_rnn = nn.LSTM((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
 
         self.answ_proj = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)  
         self.fusion = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
@@ -240,7 +240,7 @@ class Encoder(nn.Module):
     
     def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
         
-        index = torch.vstack([torch.arange(s,s+answ_embeds.shape[1]) for s in answ_start])
+        index = torch.vstack(list(pad_sequence([torch.arange(s,e+1) for s,e in zip(answ_start,answ_end)], batch_first=True)))
 
         i = torch.arange(answ_embeds.shape[0]).reshape(answ_embeds.shape[0],1,1)
         j = index.unsqueeze(-1)
@@ -351,7 +351,7 @@ class Decoder(nn.Module):
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
 
-        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True, dropout=dropout)
+        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True)
 
         self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)  
 
