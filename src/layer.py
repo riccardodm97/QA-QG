@@ -210,6 +210,7 @@ class Encoder(nn.Module):
     def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device):
         super().__init__()
 
+        self.device = device
         self.enc_hidden_dim = enc_hidden_dim
         self.dec_hidden_dim = dec_hidden_dim
 
@@ -228,7 +229,7 @@ class Encoder(nn.Module):
     
     def augment_embeddings(self,embeddings,answ_start,answ_end):
 
-        t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1])).float()   #TODO rename e spiegare cosa facciamo 
+        t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()   #TODO rename e spiegare cosa facciamo 
         t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1])).float()
         m = torch.mul(t1,t2).unsqueeze(-1)
         augmented_emb = torch.cat((embeddings,m),dim=2)

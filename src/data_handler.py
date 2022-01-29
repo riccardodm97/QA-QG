@@ -162,7 +162,7 @@ class DataManager:
         else:
             sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
     
-        return DataLoader(dataset,sampler=sampler,batch_size=None)
+        return DataLoader(dataset,sampler=sampler,batch_size=None,num_workers=4)  #TODO num_workers 
         
     
     def _build_hf_dataset(self, df : pd.DataFrame, has_answers : bool = True):  
