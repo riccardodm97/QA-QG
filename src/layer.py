@@ -7,10 +7,12 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class EmbeddingLayer(nn.Module):
 
-    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, device = 'cpu'):
+    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, dropout, device = 'cpu'):
         super().__init__()
 
         vectors = torch.from_numpy(vectors).to(device) 
+
+        self.drop_prob = dropout
         
         _ , self.embedding_dim = vectors.shape
         self.embed = nn.Embedding.from_pretrained(vectors, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer 
@@ -20,6 +22,7 @@ class EmbeddingLayer(nn.Module):
     def forward(self, to_embed):
 
         embeddings = self.embed(to_embed)
+        F.dropout(embeddings, self.drop_prob)
         return embeddings
 
 
@@ -213,11 +216,11 @@ class Encoder(nn.Module):
         self.enc_hidden_dim = enc_hidden_dim
         self.dec_hidden_dim = dec_hidden_dim
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
-        self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
-        self.answ_rnn = nn.LSTM((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True, dropout=dropout)
+        self.answ_rnn = nn.LSTM((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True, dropout=dropout)
 
         self.answ_proj = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)  
         self.fusion = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
@@ -343,12 +346,12 @@ class Decoder(nn.Module):
     def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
         super().__init__()
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
 
-        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True)
+        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True, dropout=dropout)
 
         self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)  
 
@@ -387,6 +390,8 @@ class Decoder(nn.Module):
 
         dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=1))
         # [bs, dec_output_dim]
+
+        dec_out = self.dropout(dec_out)
 
         return dec_out, rnn_hidden, rnn_cell
 

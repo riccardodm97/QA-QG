@@ -20,7 +20,7 @@ class DrQA(nn.Module):
             grad[words:] = 0
             return grad
         
-        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, device)
+        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, dropout, device)
 
         self.context_bilstm = layer.StackedBiLSTM(self.emb_layer.embedding_dim* 2, hidden_dim, num_layers, dropout)
         
@@ -200,7 +200,7 @@ class Seq2Seq(nn.Module):
     def get_model_name(self) -> str :
         return 'Seq2Seq'
     
-    def forward(self, inputs, teacher_force_ratio = 0.75):
+    def forward(self, inputs, teacher_force_ratio = 0.5):
 
         ctx_ids = inputs['context_ids']
         answ_ids = inputs['answer_ids']
