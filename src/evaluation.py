@@ -109,8 +109,9 @@ def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
 
     metrics = defaultdict(list)
 
-    true_text = tokenizer.decode_batch(true.tolist())
+    pred = torch.where(pad_mask!=0,pred,0)  #all tokens predicted after eos should not be taken into account
     pred_text = tokenizer.decode_batch(pred.tolist())
+    true_text = tokenizer.decode_batch(true.tolist())
 
     metric = load_metric('bleu')
 

@@ -236,13 +236,23 @@ class Encoder(nn.Module):
         return augmented_emb
     
     def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
+        
+        index = torch.vstack([torch.arange(s,s+answ_embeds.shape[1]) for s in answ_start])
 
-        z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.enc_hidden_dim*2,device=self.device)    #TODO rename
+        i = torch.arange(answ_embeds.shape[0]).reshape(answ_embeds.shape[0],1,1)
+        j = index.unsqueeze(-1)
+        k = torch.arange(ctx_out.shape[2])                   
 
-        for i in range(answ_embeds.shape[0]):
-            z[i,0:answ_end[i]+1-answ_start[i],:] = ctx_out[i,answ_start[i]:answ_end[i]+1,:]   #TODO no for loop
+        c = ctx_out[i,j,k]
 
-        return torch.cat((z,answ_embeds),dim=2)
+        return torch.cat((c,answ_embeds),dim=2)
+
+        # z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.enc_hidden_dim*2,device=self.device)    #TODO rename
+
+        # for i in range(answ_embeds.shape[0]):
+        #     z[i,0:answ_end[i]+1-answ_start[i],:] = ctx_out[i,answ_start[i]:answ_end[i]+1,:]   #TODO no for loop
+
+        # return torch.cat((z,answ_embeds),dim=2)
 
     
     def forward(self, context_ids, answer_ids, answ_start, answ_end, ctx_lengths, answ_lenghts):

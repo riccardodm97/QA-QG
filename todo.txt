@@ -12,14 +12,15 @@ TODO IMPORTANT QG
 - qg_hanlder ✔
 - dropout 
 - hidden_dims 
-- pack_padded_sequence , pad_packed_sequence
-- mask pad attention
+- pack_padded_sequence , pad_packed_sequence ✔
+- mask pad attention ✔
 - ancoder di bentrevett
-- fix ha paper (no mean su lstm answer outputs ma ultimo hidden)
+- fix ha paper (no mean su lstm answer outputs ma ultimo hidden) ✔
 - hook train embeddings
 - init weights 
 - testare tutto debug 
 - beam search / eval 
+- decode batch ma senza contare gli id predetti dopo eos in true 
 
 
 
