@@ -296,7 +296,7 @@ class Attention(nn.Module):
         self.tanh = nn.Tanh()
 
 
-    def forward(self, hidden, outputs, ):
+    def forward(self, hidden, outputs):
 
         #outputs = [bs, ctx_len, enc_hidden_dim*2]
         #hidden = [bs, dec_hidden_dim]
