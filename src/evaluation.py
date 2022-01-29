@@ -36,7 +36,7 @@ def normalize_answer(s):
 
 def get_tokens(s):
   if not s: return []
-  return normalize_answer(s).split()
+  return s.split()    #normalize_answer(s).split() #TODO: debug
 
 def compute_exact(true, pred):
     return float(normalize_answer(true) == normalize_answer(pred))
@@ -121,11 +121,12 @@ def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
 
       acc, prec, rec = accuracy_precision_recall_text(t, p)
       f1 = f1_score(prec, rec)
+      #TODO: DEBUG
       p_token = get_tokens(p)
       t_token = get_tokens(t)
-      message_pred = "Strings in Predicted: " + " ".join(p_token)
+      message_pred = "Strings in Predicted Message: " + " ".join(p_token)
       logger.info(message_pred)                                  
-      message_true = "Strings in Predicted: " + " ".join(t_token)
+      message_true = "Strings in True Messsage: " + " ".join(t_token)
       logger.info(message_true)    
       m = metric.compute(predictions=[p_token],references=[[t_token]])
 
