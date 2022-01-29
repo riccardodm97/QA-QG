@@ -310,12 +310,12 @@ class QG_handler :
 
         self.data_manager : DataManager = QGDataManager(squad_dataset, device)
 
-        N_EPOCHS = 15
+        N_EPOCHS = 10
         ENC_HIDDEN = 512
         DEC_HIDDEN = 512
         GRAD_CLIPPING = 10
         BATCH_SIZE = 32
-        LR = 0.005
+        LR = 0.01
         DROPOUT = 0.5
         RANDOM_BATCH = False
 
