@@ -315,8 +315,8 @@ class QG_handler :
         DEC_HIDDEN = 512
         GRAD_CLIPPING = 10
         BATCH_SIZE = 32
-        LR = 0.002
-        DROPOUT = 0
+        LR = 0.005
+        DROPOUT = 0.5
         RANDOM_BATCH = False
 
         #log model configuration   
