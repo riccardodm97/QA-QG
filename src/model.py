@@ -207,24 +207,27 @@ class Seq2Seq(nn.Module):
         qst_ids = inputs['question_ids']
         ctx_mask = inputs['context_mask']
         answ_mask = inputs['answer_mask']
-        qst_mask = inputs['question_mask']
         answ_start = inputs['answer_token_start']
         answ_end = inputs['answer_token_end']
+
+        ctx_lengths = torch.count_nonzero(ctx_mask,dim=1)    # [bs]
+        answ_lengths = torch.count_nonzero(answ_mask,dim=1)  # [bs]
+
 
         batch_size = ctx_ids.shape[0]
         trg_len = qst_ids.shape[1]
 
         #tensor where to store predictions 
-        outputs = torch.zeros(batch_size, trg_len, self.output_dim).to(self.device)
+        outputs = torch.zeros(batch_size, trg_len, self.output_dim, device=self.device)
 
-        enc_outputs, hidden = self.encoder(ctx_ids,answ_ids,answ_start, answ_end)
+        enc_outputs, hidden = self.encoder(ctx_ids, answ_ids, answ_start, answ_end, ctx_lengths, answ_lengths)
 
         input = qst_ids[:,0]    #TODO shape ? squeeze ? 
-        cell = torch.zeros(hidden.size(),device=self.device)
+        cell = torch.zeros(hidden.size(), device=self.device)
 
         for word_idx in range(1,trg_len):
 
-            dec_out, hidden, cell = self.decoder(input, hidden, cell, enc_outputs)
+            dec_out, hidden, cell = self.decoder(input, hidden, cell, enc_outputs, ctx_mask)
 
             outputs[:,word_idx,:] = dec_out
 

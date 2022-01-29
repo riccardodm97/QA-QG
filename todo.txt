@@ -23,9 +23,12 @@ TODO IMPORTANT QG
 
 
 
-
-
 TODO IMPORTANT QA 
+
+- rimuovere i #TODO 
+- remove errors 
+- pulire il codice 
+- commentare codice
 
 - encodare dataset in dataframe ✔
 - creare custom class per data handling ✔
@@ -55,10 +58,7 @@ TODO IMPORTANT QA
 - train-val split su title ✔
 - has label -> has_answers ✔
 - non harcodare Bert in compute_answers ✔
-- rimuovere i #TODO ✔
-- remove errors 
-- pulire il codice 
-- commentare codice
+
 
 TODO SECONDARY
 - group answers by id ✘

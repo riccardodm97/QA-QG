@@ -1,4 +1,3 @@
-from turtle import forward
 import numpy as np 
 import torch
 from torch import nn
@@ -207,7 +206,7 @@ class BilinearAttentionLayer(nn.Module):
 
 class Encoder(nn.Module):
 
-    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device):
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, device, dropout):
         super().__init__()
 
         self.device = device
@@ -220,10 +219,10 @@ class Encoder(nn.Module):
         self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
         self.answ_rnn = nn.LSTM((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
 
-        self.fc1 = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)  #TODO cambiare nomi 
-        self.fc2 = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
+        self.answ_proj = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)  
+        self.fusion = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
 
-        self.tanh = nn.Tanh()
+        self.dropout = nn.Dropout(dropout)
 
         #TODO dropout 
     
@@ -246,19 +245,24 @@ class Encoder(nn.Module):
         return torch.cat((z,answ_embeds),dim=2)
 
     
-    def forward(self, context_ids, answer_ids, answ_start, answ_end):
+    def forward(self, context_ids, answer_ids, answ_start, answ_end, ctx_lengths, answ_lenghts):
 
-        #context_ids = [bs, ctx_len]
-        #answ_start = [bs]
-        #answ_end = [bs]
+        # context_ids = [bs, ctx_len]
+        # answer_ids = [bs, answ_len]
+        # answ_start = [bs]
+        # answ_end = [bs]
+        # ctx_lenghts = [bs]   this is not the same as ctx_len as that is the max len in a batch 
+        # answ_lenghts = [bs]
 
         ctx_embeds = self.emb_layer(context_ids)
         # [bs, ctx_len, emb_dim]
         
-        augmented_emb = self.augment_embeddings(ctx_embeds,answ_start,answ_end)
+        augmented_ctx_emb = self.augment_embeddings(ctx_embeds,answ_start,answ_end)
         # [bs, ctx_len, emb_dim+1]
 
-        ctx_outputs, (ctx_hidden,ctx_cell) = self.ctx_rnn(augmented_emb)    #TODO pack padded ecc 
+        packed_ctx_embeds = pack_padded_sequence(augmented_ctx_emb, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
+        ctx_outputs, (ctx_hidden,ctx_cell) = self.ctx_rnn(packed_ctx_embeds)  
+        ctx_outputs = pad_packed_sequence(ctx_outputs, batch_first=True) 
         # [bs, ctx_len, enc_hidden_dim*2]
 
         answ_embeds = self.emb_layer(answer_ids)
@@ -267,19 +271,21 @@ class Encoder(nn.Module):
         answ_ctx = self.ctx2answ(answ_embeds,ctx_outputs,answ_start,answ_end)
         # [bs, answ_len, enc_hidden_dim*2 + emb_dim]
 
-        answ_outputs, (answ_hidden,answ_cell) = self.answ_rnn(answ_ctx)
+        packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lenghts.cpu(), batch_first=True, enforce_sorted=False)
+        answ_outputs, (answ_hidden,answ_cell) = self.answ_rnn(packed_answ_ctx)
+        answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
 
-        answ_reduced = torch.mean(answ_outputs,dim=1) # [bs, enc_hidden_dim*2]
+        answ_reduced = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) # [bs, enc_hidden_dim*2]
         ctx_reduced = torch.mean(ctx_outputs,dim=1) # [bs, enc_hidden_dim*2]              
 
-        projected_answ = self.fc1(answ_reduced)  
+        projected_answ = self.answ_proj(answ_reduced)  
         # [bs, enc_hidden_dim*2]
 
         ctx_answ_fusion = torch.add(projected_answ,ctx_reduced)
         # [bs, enc_hidden_dim*2]
 
-        hidden = self.tanh(self.fc2(ctx_answ_fusion))
+        hidden = torch.tanh(self.fusion(ctx_answ_fusion))
         # [bs, dec_hidden_dim]
 
         return ctx_outputs, hidden
@@ -290,36 +296,36 @@ class Attention(nn.Module):
     def __init__(self, dec_hidden_dim, enc_hidden_dim):
         super().__init__()
 
-        self.fc1 = nn.Linear(dec_hidden_dim + (enc_hidden_dim*2), dec_hidden_dim) #TODO rename 
-        self.fc2 = nn.Linear(dec_hidden_dim, 1, bias=False)   #TODO bias 
-
-        self.tanh = nn.Tanh()
+        self.w = nn.Linear(dec_hidden_dim + (enc_hidden_dim*2), dec_hidden_dim, bias=False)  
+        self.v = nn.Parameter(torch.rand(dec_hidden_dim),requires_grad=True)  
 
 
-    def forward(self, hidden, outputs):
+    def forward(self, dec_state, enc_states, enc_mask):
 
-        #outputs = [bs, ctx_len, enc_hidden_dim*2]
-        #hidden = [bs, dec_hidden_dim]
+        #enc_states = [bs, ctx_len, enc_hidden_dim*2]
+        #dec_state = [bs, dec_hidden_dim]
+        #enc_mask = [bs, ctx_len]
 
-        hidden = hidden.unsqueeze(1).repeat(1,outputs.shape[1],1)
+        dec_states = dec_state.unsqueeze(1).repeat(1,enc_states.shape[1],1)
         # [bs, ctx_len, dec_hidden_dim]
 
-        temp1 = self.fc1(torch.cat((hidden,outputs), dim=2))   #TODO RENAME TEMP 
-        temp2 = self.tanh(temp1)
+        energy = torch.tanh(self.w(torch.cat((dec_states,enc_states), dim=2)))  
         # [bs, ctx_len, dec_hidden_dim]
 
-        a = self.fc2(temp2).squeeze(2)
+        v = self.v.repeat(enc_states.shape[0],1).unsqueeze(2)
+        # [bs, dec_hidden_dim, 1]
+        
+        att = torch.bmm(energy,v).squeeze(2)
+        att = att.masked_fill(enc_mask == 0, float('-inf'))  #avoid paying attention to pad tokens 
         # [bs, ctx_len]
 
-        #TODO MASK FILL 
-
-        soft_a = F.softmax(a, dim=1)
+        att_weights = F.softmax(att, dim=1)
         # [bs, ctx_len]
 
-        weighted_outputs = torch.bmm(soft_a.unsqueeze(1),outputs)
+        att_out = torch.bmm(att_weights.unsqueeze(1), enc_states)
         # [bs, 1, enc_hidden_dim*2]
 
-        return weighted_outputs
+        return att_out
 
 
 class Decoder(nn.Module):
@@ -337,12 +343,13 @@ class Decoder(nn.Module):
         self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)   #TODO name 
 
     
-    def forward(self, input, prev_hidden, prev_cell, enc_outputs):
+    def forward(self, input, prev_hidden, prev_cell, enc_outputs, enc_mask):
 
         #input = [bs]
         #prev_hidden = [bs, dec_hidden_dim]
         #prev_cell = [bs, dec_hidden_dim]
         #enc_outputs = [bs, ctx_len, enc_hidden_dim*2]
+        #enc_mask = [bs, ctx_len]
 
         input = input.unsqueeze(1)
         # [bs, 1]
@@ -350,7 +357,7 @@ class Decoder(nn.Module):
         qst_embeds = self.emb_layer(input)
         # [bs, 1, emb_dim]
 
-        ctx_vector = self.attention(prev_hidden, enc_outputs)   #TODO rename
+        ctx_vector = self.attention(prev_hidden, enc_outputs, enc_mask)   #TODO rename
         # [bs, 1, enc_hidden_dim*2]
 
         rnn_input_0 = torch.cat((qst_embeds,ctx_vector), dim=2)
