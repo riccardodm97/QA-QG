@@ -230,7 +230,7 @@ class Encoder(nn.Module):
     def augment_embeddings(self,embeddings,answ_start,answ_end):
 
         t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()   #TODO rename e spiegare cosa facciamo 
-        t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1])).float()
+        t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()
         m = torch.mul(t1,t2).unsqueeze(-1)
         augmented_emb = torch.cat((embeddings,m),dim=2)
 
@@ -238,7 +238,7 @@ class Encoder(nn.Module):
     
     def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
 
-        z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.enc_hidden_dim*2)    #TODO rename
+        z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.enc_hidden_dim*2,device=self.device)    #TODO rename
 
         for i in range(answ_embeds.shape[0]):
             z[i,0:answ_end[i]+1-answ_start[i],:] = ctx_out[i,answ_start[i]:answ_end[i]+1,:]   #TODO no for loop
