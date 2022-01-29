@@ -56,5 +56,4 @@ if __name__ == '__main__':
     parser.add_argument("-l",  "--log", dest="log", help="Wheter to log on wandb or not", action='store_true')
     args = parser.parse_args()
 
-
     main(args.task,args.model,args.dataset,args.log)

@@ -262,7 +262,7 @@ class Encoder(nn.Module):
 
         packed_ctx_embeds = pack_padded_sequence(augmented_ctx_emb, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
         ctx_outputs, (ctx_hidden,ctx_cell) = self.ctx_rnn(packed_ctx_embeds)  
-        ctx_outputs = pad_packed_sequence(ctx_outputs, batch_first=True) 
+        ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
         # [bs, ctx_len, enc_hidden_dim*2]
 
         answ_embeds = self.emb_layer(answer_ids)
