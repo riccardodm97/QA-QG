@@ -7,12 +7,10 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_se
 
 class EmbeddingLayer(nn.Module):
 
-    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, dropout, device = 'cpu'):
+    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, device = 'cpu'):
         super().__init__()
 
         vectors = torch.from_numpy(vectors).to(device) 
-
-        self.drop_prob = dropout
         
         _ , self.embedding_dim = vectors.shape
         self.embed = nn.Embedding.from_pretrained(vectors, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer 
@@ -22,7 +20,6 @@ class EmbeddingLayer(nn.Module):
     def forward(self, to_embed):
 
         embeddings = self.embed(to_embed)
-        F.dropout(embeddings, self.drop_prob)
         return embeddings
 
 
@@ -216,7 +213,7 @@ class Encoder(nn.Module):
         self.enc_hidden_dim = enc_hidden_dim
         self.dec_hidden_dim = dec_hidden_dim
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
@@ -249,13 +246,6 @@ class Encoder(nn.Module):
         c = ctx_out[i,j,k]
 
         return torch.cat((c,answ_embeds),dim=2)
-
-        # z = torch.zeros(answ_embeds.shape[0],answ_embeds.shape[1],self.enc_hidden_dim*2,device=self.device)    #TODO rename
-
-        # for i in range(answ_embeds.shape[0]):
-        #     z[i,0:answ_end[i]+1-answ_start[i],:] = ctx_out[i,answ_start[i]:answ_end[i]+1,:]   #TODO no for loop
-
-        # return torch.cat((z,answ_embeds),dim=2)
 
     
     def forward(self, context_ids, answer_ids, answ_start, answ_end, ctx_lengths, answ_lenghts):
@@ -346,7 +336,7 @@ class Decoder(nn.Module):
     def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
         super().__init__()
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
@@ -390,8 +380,6 @@ class Decoder(nn.Module):
 
         dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=1))
         # [bs, dec_output_dim]
-
-        dec_out = self.dropout(dec_out)
 
         return dec_out, rnn_hidden, rnn_cell
 

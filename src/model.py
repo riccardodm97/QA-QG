@@ -20,7 +20,7 @@ class DrQA(nn.Module):
             grad[words:] = 0
             return grad
         
-        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, dropout, device)
+        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, device)
 
         self.context_bilstm = layer.StackedBiLSTM(self.emb_layer.embedding_dim* 2, hidden_dim, num_layers, dropout)
         

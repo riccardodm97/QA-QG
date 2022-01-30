@@ -18,7 +18,7 @@ TODO IMPORTANT QG
 - fix ha paper (no mean su lstm answer outputs ma ultimo hidden) ✔
 - hook train embeddings
 - init weights 
-- testare tutto debug 
+- testare tutto debug ✔
 - beam search / eval 
 - decode batch ma senza contare gli id predetti dopo eos in true 
 
