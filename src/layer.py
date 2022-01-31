@@ -498,7 +498,7 @@ class Decoder_baseline(nn.Module):
     def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
         super().__init__()
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, True, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, False, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.attention = Attention_baseline(dec_hidden_dim, enc_hidden_dim)
