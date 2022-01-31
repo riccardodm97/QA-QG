@@ -9,7 +9,7 @@ import src.globals as globals
 
 class DrQA(nn.Module):
     
-    def __init__(self, hidden_dim, num_layers, dropout, weights_matrix, pad_idx, device):
+    def __init__(self, hidden_dim, num_layers, dropout, freeze_emb, weights_matrix, pad_idx, device):
         
         super().__init__()
         
@@ -20,7 +20,7 @@ class DrQA(nn.Module):
             grad[words:] = 0
             return grad
         
-        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, dropout, device)
+        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, dropout, freeze_emb, device)
 
         self.context_bilstm = layer.StackedBiLSTM(self.emb_layer.embedding_dim* 2, hidden_dim, num_layers, dropout)
         

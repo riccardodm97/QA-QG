@@ -38,6 +38,7 @@ class QA_handler :
             LR = 0.002
             RANDOM_BATCH = False
             LR_SCHEDULER = False
+            FREEZE = False
 
             #log model configuration   
             wandb.config.hidden_dim = HIDDEN_DIM
@@ -49,11 +50,12 @@ class QA_handler :
             wandb.config.learning_rate = LR
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.lr_scheduler = LR_SCHEDULER
+            wandb.config.freeze_emb = FREEZE
 
             pad_idx = self.data_manager.vocab[globals.PAD_TOKEN]
             vectors = self.data_manager.emb_model.vectors
             
-            self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,vectors,pad_idx,device)
+            self.model = models.DrQA(HIDDEN_DIM,LSTM_LAYER,DROPOUT,FREEZE,vectors,pad_idx,device)
 
             self.optimizer = optim.Adamax(self.model.parameters(), lr=LR)
 

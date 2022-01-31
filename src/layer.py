@@ -7,13 +7,13 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_se
 
 class EmbeddingLayer(nn.Module):
 
-    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, drop_prob, device = 'cpu'):
+    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, drop_prob, freeze, device = 'cpu'):
         super().__init__()
 
         vectors = torch.from_numpy(vectors).to(device) 
         
         _ , self.embedding_dim = vectors.shape
-        self.embed = nn.Embedding.from_pretrained(vectors, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer 
+        self.embed = nn.Embedding.from_pretrained(vectors, freeze = freeze, padding_idx = pad_idx)   #load pretrained weights in the layer 
 
         if hook is not None : self.embed.weight.register_hook(hook) 
 
@@ -216,7 +216,7 @@ class Encoder(nn.Module):
         self.enc_hidden_dim = enc_hidden_dim
         self.dec_hidden_dim = dec_hidden_dim
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, False, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
@@ -339,7 +339,7 @@ class Decoder(nn.Module):
     def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
         super().__init__()
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, True, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
