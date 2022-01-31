@@ -365,7 +365,7 @@ class Decoder(nn.Module):
         qst_embeds = self.emb_layer(input)
         # [bs, 1, emb_dim]
 
-        ctx_vector = self.attention(prev_hidden, enc_outputs, enc_mask)   #TODO rename
+        ctx_vector = self.attention(prev_hidden, enc_outputs, enc_mask)   
         # [bs, 1, enc_hidden_dim*2]
 
         rnn_input_0 = torch.cat((qst_embeds,ctx_vector), dim=2)

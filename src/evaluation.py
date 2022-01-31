@@ -105,11 +105,11 @@ def qa_evaluate(data : dict) -> dict:
     return average_metrics
 
 
-def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
+def qg_evaluate(pred, true, mask, tokenizer : Tokenizer) -> dict:
 
     metrics = defaultdict(list)
 
-    pred = torch.where(pad_mask!=0,pred,0)  #all tokens predicted after eos should not be taken into account
+    pred = torch.where(mask!=0,pred,0)  #all tokens predicted after eos should not be taken into account
     pred_text = tokenizer.decode_batch(pred.tolist())
     true_text = tokenizer.decode_batch(true.tolist())
 
@@ -130,7 +130,7 @@ def qg_evaluate(pred, true, pad_mask, tokenizer : Tokenizer) -> dict:
     
     average_metrics = {k: np.mean(v) for k, v in metrics.items()}
 
-    num_acc = pred.eq(true).masked_select(pad_mask.bool()).float().mean().item()
+    num_acc = pred.eq(true).masked_select(mask.bool()).float().mean().item()
 
     average_metrics['num_acc'] = num_acc
 
