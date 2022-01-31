@@ -193,10 +193,13 @@ class Seq2Seq(nn.Module):
     def get_model_name(self) -> str :
         raise NotImplementedError()
     
+    def get_att_mask(inputs):
+        raise NotImplementedError()
+    
     def forward(self, inputs, teacher_force_ratio = 0.5):
 
         qst_ids = inputs['question_ids']
-        mask = None #TODO 
+        mask = self.get_att_mask(inputs)
 
         batch_size = qst_ids.shape[0]
         trg_len = qst_ids.shape[1]
@@ -233,6 +236,9 @@ class BertQG(Seq2Seq):
     
     def get_model_name(self) -> str :
         return 'BertQG'
+    
+    def get_att_mask(inputs):
+        return  ~inputs['special_token_mask']  # & inputs['type_ids']  #TODO solo ctx o anche answ ? 
 
 class RefNetQG(Seq2Seq):
 
@@ -245,6 +251,9 @@ class RefNetQG(Seq2Seq):
     
     def get_model_name(self) -> str :
         return 'RefNetQG'
+    
+    def get_att_mask(inputs):
+        return inputs['context_mask']
     
     
 
