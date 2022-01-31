@@ -182,47 +182,35 @@ class ElectraQA(nn.Module):
 
 class Seq2Seq(nn.Module):
 
-    def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
+    def __init__(self, output_dim, device) :
         super().__init__()
 
         self.device = device
         self.output_dim = output_dim
 
-        self.encoder = layer.Encoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
-        self.decoder = layer.Decoder(dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device )
-
         self.to(device)
     
     def get_model_name(self) -> str :
-        return 'Seq2Seq'
+        raise NotImplementedError()
     
     def forward(self, inputs, teacher_force_ratio = 0.5):
 
-        ctx_ids = inputs['context_ids']
-        answ_ids = inputs['answer_ids']
         qst_ids = inputs['question_ids']
-        ctx_mask = inputs['context_mask']
-        answ_mask = inputs['answer_mask']
-        answ_start = inputs['answer_token_start']
-        answ_end = inputs['answer_token_end']
+        mask = None #TODO 
 
-        ctx_lengths = torch.count_nonzero(ctx_mask,dim=1)    # [bs]
-        answ_lengths = torch.count_nonzero(answ_mask,dim=1)  # [bs]
-
-
-        batch_size = ctx_ids.shape[0]
+        batch_size = qst_ids.shape[0]
         trg_len = qst_ids.shape[1]
 
         #tensor where to store predictions 
         outputs = torch.zeros(batch_size, trg_len, self.output_dim, device=self.device)
 
-        enc_outputs, hidden = self.encoder(ctx_ids, answ_ids, answ_start, answ_end, ctx_lengths, answ_lengths)
+        enc_outputs, hidden = self.encoder(inputs)
 
         input = qst_ids[:,0]    
 
         for word_idx in range(1,trg_len):
 
-            dec_out, hidden = self.decoder(input, hidden, enc_outputs, ctx_mask)
+            dec_out, hidden = self.decoder(input, hidden, enc_outputs, mask)
 
             outputs[:,word_idx,:] = dec_out
 
@@ -233,4 +221,30 @@ class Seq2Seq(nn.Module):
             input = qst_ids[:,word_idx] if teacher_force else pred
         
         return outputs
+
+class BertQG(Seq2Seq):
+
+    def __init__(self, dec_vectors, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
+
+        self.encoder = layer.BertEncoder(dropout, device)
+        self.decoder = layer.Decoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device)
+
+        super().__init__(output_dim, device)
+    
+    def get_model_name(self) -> str :
+        return 'BertQG'
+
+class RefNetQG(Seq2Seq):
+
+    def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
+
+        self.encoder = layer.RefNetEncoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
+        self.decoder = layer.Decoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device )
+
+        super().__init__(output_dim, device)
+    
+    def get_model_name(self) -> str :
+        return 'RefNetQG'
+    
+    
 

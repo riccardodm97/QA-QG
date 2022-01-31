@@ -356,12 +356,12 @@ class TransformerDataManager(DataManager):
         return transform_with_answer if has_answer else transform_no_answer
 
 
-class QGDataManager(DataManager):
+class RnnDataManagerQG(DataManager):
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
         start_time = time.perf_counter()
-        logger.info('init QGDataManager')
+        logger.info('init RnnDataManagerQG')
 
         super().__init__(dataset, device)
 
@@ -388,7 +388,7 @@ class QGDataManager(DataManager):
         enc_tokenizer = Tokenizer(WordLevel(unk_token=globals.UNK_TOKEN))
         enc_tokenizer.normalizer = BertNormalizer(handle_chinese_chars=False) 
         enc_tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
-        # enc_tokenizer.post_processor = processor 
+        # enc_tokenizer.post_processor = processor # TODO 
 
         dec_tokenizer = Tokenizer(WordLevel(unk_token=globals.UNK_TOKEN))
         dec_tokenizer.normalizer = BertNormalizer(handle_chinese_chars=False) 
@@ -407,10 +407,10 @@ class QGDataManager(DataManager):
         enc_tokenizer.enable_padding(direction="right", pad_id=enc_tokenizer.token_to_id(globals.PAD_TOKEN), pad_type_id=1, pad_token=globals.PAD_TOKEN)
 
         dec_tokenizer.train_from_iterator(dec_text,trainer=dec_trainer) 
-        dec_tokenizer.enable_padding(direction="right", pad_id=enc_tokenizer.token_to_id(globals.PAD_TOKEN), pad_type_id=1, pad_token=globals.PAD_TOKEN)
+        dec_tokenizer.enable_padding(direction="right", pad_id=dec_tokenizer.token_to_id(globals.PAD_TOKEN), pad_type_id=1, pad_token=globals.PAD_TOKEN)
 
         self.enc_tokenizer = enc_tokenizer
-        self.dec_tokenizer = dec_tokenizer      #TODO clean text before ? 
+        self.dec_tokenizer = dec_tokenizer      
 
 
     def _batch_transform(self, has_answer : bool):
@@ -441,3 +441,100 @@ class QGDataManager(DataManager):
     
         
         return transform
+
+class BertDataManagerQG(DataManager):
+    
+    VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
+
+    def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
+
+        start_time = time.perf_counter()
+        logger.info('init BertDataManagerQG')
+
+        super().__init__(dataset,device)
+
+        end_time = time.perf_counter()
+        logger.info('elapsed time in building DataManager : %f',end_time-start_time)
+
+
+    def _get_tokenizer(self):
+        
+        #encoder tokenizer
+        if not os.path.exists(self.VOCAB_PATH):
+            utils.load_bert_vocab()
+
+        enc_tokenizer = BertWordPieceTokenizer(self.VOCAB_PATH, lowercase=True)
+        enc_tokenizer.enable_padding(direction="right", pad_type_id=1)
+        enc_tokenizer.enable_truncation(globals.BERT_MAX_TOKENS, strategy='only_second', stride = 25)
+
+        #decoder tokenizer
+        processor = TemplateProcessing(
+            single="[SOS] $A [EOS]",
+            pair="[SOS] $A [EOS] [SOS]:1 $B:1 [EOS]:1",
+            special_tokens=[
+                ("[SOS]", 2),
+                ("[EOS]", 3),
+            ],
+        )
+
+        dec_tokenizer = Tokenizer(WordLevel(unk_token=globals.UNK_TOKEN))
+        dec_tokenizer.normalizer = BertNormalizer(handle_chinese_chars=False) 
+        dec_tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
+        dec_tokenizer.post_processor = processor 
+ 
+        dec_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=40000)   
+
+        dec_text = self.dataset.train_df.question.to_list()
+
+        dec_tokenizer.train_from_iterator(dec_text,trainer=dec_trainer) 
+        dec_tokenizer.enable_padding(direction="right", pad_id=dec_tokenizer.token_to_id(globals.PAD_TOKEN), pad_type_id=1, pad_token=globals.PAD_TOKEN)
+
+        self.enc_tokenizer = enc_tokenizer
+        self.dec_tokenizer = dec_tokenizer 
+    
+    def _batch_transform(self, has_answer : bool):
+
+        assert has_answer, 'Answers are needed for Question Generation task'
+
+        def transform(batch):
+
+            ctx_answ_encodings: list[Encoding] = self.enc_tokenizer.encode_batch(list(zip(batch['answer'],batch['context'])))
+            question_encodings: list[Encoding] = self.dec_tokenizer.encode_batch(batch['question'])
+
+            starts = list(map(lambda x: x[0],batch['label_char']))
+            ends = list(map(lambda x: x[1],batch['label_char']))
+
+            not_replaced = []
+            for i,e in enumerate(ctx_answ_encodings) :
+                if e.char_to_token(starts[i],1) is None or e.char_to_token(ends[i]-1,1) is None :
+                    flag = 0
+                    for o in e.overflowing :
+                        if o.char_to_token(starts[i],1) is not None and o.char_to_token(ends[i]-1,1) is not None :
+                            ctx_answ_encodings[i] = o
+                            flag = 1
+                            break
+                    if flag==0 :
+                        not_replaced.append(i)
+            
+            for idx in sorted(not_replaced, reverse = True):
+                ctx_answ_encodings.pop(idx)
+                starts.pop(idx)
+                ends.pop(idx)
+                batch['context'].pop(idx)
+                batch['answer'].pop(idx)
+
+            batch = {
+                'ctx_answ_ids': torch.tensor([e.ids for e in ctx_answ_encodings], device=self.device),
+                'ctx_answ_mask': torch.tensor([e.attention_mask for e in ctx_answ_encodings], device=self.device),
+                'special_tokens_mask':torch.tensor([e.special_tokens_mask for e in ctx_answ_encodings], device=self.device),
+                'type_ids': torch.tensor([e.type_ids for e in ctx_answ_encodings], device=self.device),
+                'answer_token_start': torch.tensor([e.char_to_token(starts[i],1) for i,e in enumerate(ctx_answ_encodings)], device=self.device),
+                'answer_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(ctx_answ_encodings)], device=self.device),
+                'question_ids': torch.tensor([e.ids for e in question_encodings], device=self.device),
+                'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device)
+            }
+
+            return batch
+        
+        return transform
+

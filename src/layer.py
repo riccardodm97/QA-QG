@@ -1,10 +1,12 @@
-from audioop import bias
 import numpy as np 
 import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 
+from transformers import BertModel 
+
+import src.globals as globals 
 
 class EmbeddingLayer(nn.Module):
 
@@ -248,18 +250,26 @@ class Encoder(nn.Module):
         c = ctx_out[i,j,k]
 
         return torch.cat((c,answ_embeds),dim=2)
+    
+    def get_hidden_dim(self):
+
+        return self.dec_hidden_dim
 
     
-    def forward(self, context_ids, answer_ids, answ_start, answ_end, ctx_lengths, answ_lenghts):
+    def forward(self, inputs):
 
-        # context_ids = [bs, ctx_len]
-        # answer_ids = [bs, answ_len]
-        # answ_start = [bs]
-        # answ_end = [bs]
-        # ctx_lenghts = [bs]   this is not the same as ctx_len as that is the max len in a batch 
-        # answ_lenghts = [bs]
+        ctx_ids = inputs['context_ids']             # [bs, ctx_len]
+        answ_ids = inputs['answer_ids']             # [bs, answ_len]
+        ctx_mask = inputs['context_mask']           # [bs, ctx_len]
+        answ_mask = inputs['answer_mask']           # [bs, answ_len]
+        answ_start = inputs['answer_token_start']      # [bs]
+        answ_end = inputs['answer_token_end']          # [bs]
 
-        ctx_embeds = self.emb_layer(context_ids)
+        ctx_lengths = torch.count_nonzero(ctx_mask,dim=1)    # [bs]   this is not the same as ctx_len as that is the max len in a batch 
+        answ_lengths = torch.count_nonzero(answ_mask,dim=1)  # [bs]
+ 
+
+        ctx_embeds = self.emb_layer(ctx_ids)
         # [bs, ctx_len, emb_dim]
         
         augmented_ctx_emb = self.augment_embeddings(ctx_embeds,answ_start,answ_end)
@@ -270,13 +280,13 @@ class Encoder(nn.Module):
         ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
         # [bs, ctx_len, enc_hidden_dim*2]
 
-        answ_embeds = self.emb_layer(answer_ids)
+        answ_embeds = self.emb_layer(answ_ids)
         # [bs, answ_len, emb_dim]
 
         answ_ctx = self.ctx2answ(answ_embeds,ctx_outputs,answ_start,answ_end)
         # [bs, answ_len, enc_hidden_dim*2 + emb_dim]
 
-        packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lenghts.cpu(), batch_first=True, enforce_sorted=False)
+        packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lengths.cpu(), batch_first=True, enforce_sorted=False)
         answ_outputs, answ_hidden = self.answ_rnn(packed_answ_ctx)
         answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
@@ -305,7 +315,7 @@ class RefNetEncoder(nn.Module):
         self.enc_hidden_dim = enc_hidden_dim
         self.dec_hidden_dim = dec_hidden_dim
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, False, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.ctx_rnn = nn.GRU(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
@@ -337,18 +347,26 @@ class RefNetEncoder(nn.Module):
         c = ctx_out[i,j,k]
 
         return torch.cat((c,answ_embeds),dim=2)
+    
+    def get_hidden_dim(self):
+
+        return self.dec_hidden_dim
 
     
-    def forward(self, context_ids, answer_ids, answ_start, answ_end, ctx_lengths, answ_lenghts):
+    def forward(self, inputs):
 
-        # context_ids = [bs, ctx_len]
-        # answer_ids = [bs, answ_len]
-        # answ_start = [bs]
-        # answ_end = [bs]
-        # ctx_lenghts = [bs]   this is not the same as ctx_len as that is the max len in a batch 
-        # answ_lenghts = [bs]
+        ctx_ids = inputs['context_ids']             # [bs, ctx_len]
+        answ_ids = inputs['answer_ids']             # [bs, answ_len]
+        ctx_mask = inputs['context_mask']           # [bs, ctx_len]
+        answ_mask = inputs['answer_mask']           # [bs, answ_len]
+        answ_start = inputs['answer_token_start']      # [bs]
+        answ_end = inputs['answer_token_end']          # [bs]
 
-        ctx_embeds = self.emb_layer(context_ids)
+        ctx_lengths = torch.count_nonzero(ctx_mask,dim=1)    # [bs]   this is not the same as ctx_len as that is the max len in a batch 
+        answ_lengths = torch.count_nonzero(answ_mask,dim=1)  # [bs]
+ 
+
+        ctx_embeds = self.emb_layer(ctx_ids)
         # [bs, ctx_len, emb_dim]
         
         augmented_ctx_emb = self.augment_embeddings(ctx_embeds,answ_start,answ_end)
@@ -359,13 +377,13 @@ class RefNetEncoder(nn.Module):
         ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
         # [bs, ctx_len, enc_hidden_dim*2]
 
-        answ_embeds = self.emb_layer(answer_ids)
+        answ_embeds = self.emb_layer(answ_ids)
         # [bs, answ_len, emb_dim]
 
         answ_ctx = self.ctx2answ(answ_embeds,ctx_outputs,answ_start,answ_end)
         # [bs, answ_len, enc_hidden_dim*2 + emb_dim]
 
-        packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lenghts.cpu(), batch_first=True, enforce_sorted=False)
+        packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lengths.cpu(), batch_first=True, enforce_sorted=False)
         answ_outputs, answ_hidden = self.answ_rnn(packed_answ_ctx)
         answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
@@ -382,6 +400,36 @@ class RefNetEncoder(nn.Module):
         # [1, bs, dec_hidden_dim]
 
         return fused, hidden
+
+
+class BertEncoder(nn.Module):
+
+    def __init__(self, dropout = 0.1, device='cpu') :     
+        super().__init__()
+
+        self.device = device
+
+        self.bert = BertModel.from_pretrained(globals.BERT_PRETRAINED)
+        self.dropout = nn.Dropout(dropout)
+
+        self.to(device)
+    
+    def get_hidden_dim(self):
+
+        return self.bert.config.hidden_size
+    
+    def forward(self, inputs):   
+       
+        ids = inputs['ctx_answ_ids']                  # [bs, len_text]
+        mask = inputs['ctx_answ_mask']                # [bs, len_text]
+        type_ids = inputs['type_ids']                 # [bs, len_text]
+
+        bert_outputs = self.bert(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
+
+        outputs = self.dropout(bert_outputs[0])
+        # [bs, len_txt, bert_hidden_dim]
+
+        return outputs, bert_outputs[1]
 
 
 class Attention(nn.Module):
@@ -460,7 +508,7 @@ class Decoder(nn.Module):
         rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
         # rnn_out = [bs, 1, dec_hidden_dim]
 
-        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=1))
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=2))
         # [bs, 1, dec_output_dim]
 
         return dec_out.squeeze(1), rnn_hidden

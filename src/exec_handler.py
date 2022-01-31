@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 
-from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, TransformerDataManager, QGDataManager
+from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, RnnDataManagerQG, TransformerDataManager, QGDataManager
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
@@ -310,7 +310,7 @@ class QG_handler :
     
         squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
 
-        self.data_manager : DataManager = QGDataManager(squad_dataset, device)
+        self.data_manager : DataManager = RnnDataManagerQG(squad_dataset, device)
 
         N_EPOCHS = 15
         ENC_HIDDEN = 256
