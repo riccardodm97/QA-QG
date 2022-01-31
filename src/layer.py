@@ -1,3 +1,4 @@
+from audioop import bias
 import numpy as np 
 import torch
 from torch import nn
@@ -219,15 +220,13 @@ class Encoder(nn.Module):
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, False, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
-        self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
-        self.answ_rnn = nn.LSTM((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.ctx_rnn = nn.GRU(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.answ_rnn = nn.GRU((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
 
-        self.answ_proj = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2)  
+        self.answ_proj = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2, bias=False)  
         self.fusion = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
 
         self.dropout = nn.Dropout(dropout)
-
-        #TODO dropout 
     
     def augment_embeddings(self,embeddings,answ_start,answ_end):
 
@@ -267,7 +266,7 @@ class Encoder(nn.Module):
         # [bs, ctx_len, emb_dim+1]
 
         packed_ctx_embeds = pack_padded_sequence(augmented_ctx_emb, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
-        ctx_outputs, (ctx_hidden,ctx_cell) = self.ctx_rnn(packed_ctx_embeds)  
+        ctx_outputs, ctx_hidden = self.ctx_rnn(packed_ctx_embeds)  
         ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
         # [bs, ctx_len, enc_hidden_dim*2]
 
@@ -278,7 +277,7 @@ class Encoder(nn.Module):
         # [bs, answ_len, enc_hidden_dim*2 + emb_dim]
 
         packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lenghts.cpu(), batch_first=True, enforce_sorted=False)
-        answ_outputs, (answ_hidden,answ_cell) = self.answ_rnn(packed_answ_ctx)
+        answ_outputs, answ_hidden = self.answ_rnn(packed_answ_ctx)
         answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
 
@@ -291,10 +290,98 @@ class Encoder(nn.Module):
         ctx_answ_fusion = torch.add(projected_answ,ctx_reduced)
         # [bs, enc_hidden_dim*2]
 
-        hidden = torch.tanh(self.fusion(ctx_answ_fusion))
-        # [bs, dec_hidden_dim]
+        hidden = torch.tanh(self.fusion(ctx_answ_fusion)).unsqueeze(0)
+        # [1, bs, dec_hidden_dim]
 
         return ctx_outputs, hidden
+
+
+class RefNetEncoder(nn.Module):
+
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device):
+        super().__init__()
+
+        self.device = device
+        self.enc_hidden_dim = enc_hidden_dim
+        self.dec_hidden_dim = dec_hidden_dim
+
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+        self.emb_dim = self.emb_layer.embedding_dim
+
+        self.ctx_rnn = nn.GRU(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.answ_rnn = nn.GRU((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
+
+        self.fusion = nn.Linear(enc_hidden_dim*6, enc_hidden_dim*2)
+        self.to_dec = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
+
+        self.dropout = nn.Dropout(dropout)
+
+    
+    def augment_embeddings(self,embeddings,answ_start,answ_end):
+
+        t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()   #TODO rename e spiegare cosa facciamo 
+        t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()
+        m = torch.mul(t1,t2).unsqueeze(-1)
+        augmented_emb = torch.cat((embeddings,m),dim=2)
+
+        return augmented_emb
+    
+    def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
+        
+        index = torch.vstack(list(pad_sequence([torch.arange(s,e+1) for s,e in zip(answ_start,answ_end)], batch_first=True)))
+
+        i = torch.arange(answ_embeds.shape[0]).reshape(answ_embeds.shape[0],1,1)
+        j = index.unsqueeze(-1)
+        k = torch.arange(ctx_out.shape[2])                   
+
+        c = ctx_out[i,j,k]
+
+        return torch.cat((c,answ_embeds),dim=2)
+
+    
+    def forward(self, context_ids, answer_ids, answ_start, answ_end, ctx_lengths, answ_lenghts):
+
+        # context_ids = [bs, ctx_len]
+        # answer_ids = [bs, answ_len]
+        # answ_start = [bs]
+        # answ_end = [bs]
+        # ctx_lenghts = [bs]   this is not the same as ctx_len as that is the max len in a batch 
+        # answ_lenghts = [bs]
+
+        ctx_embeds = self.emb_layer(context_ids)
+        # [bs, ctx_len, emb_dim]
+        
+        augmented_ctx_emb = self.augment_embeddings(ctx_embeds,answ_start,answ_end)
+        # [bs, ctx_len, emb_dim+1]
+
+        packed_ctx_embeds = pack_padded_sequence(augmented_ctx_emb, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
+        ctx_outputs, ctx_hidden = self.ctx_rnn(packed_ctx_embeds)  
+        ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
+        # [bs, ctx_len, enc_hidden_dim*2]
+
+        answ_embeds = self.emb_layer(answer_ids)
+        # [bs, answ_len, emb_dim]
+
+        answ_ctx = self.ctx2answ(answ_embeds,ctx_outputs,answ_start,answ_end)
+        # [bs, answ_len, enc_hidden_dim*2 + emb_dim]
+
+        packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lenghts.cpu(), batch_first=True, enforce_sorted=False)
+        answ_outputs, answ_hidden = self.answ_rnn(packed_answ_ctx)
+        answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
+        # [bs, anw_len, enc_hidden_dim*2]
+
+        answ_last = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) # [bs, enc_hidden_dim*2]
+
+        answ_last = answ_last.unsqueeze(1).repeat(1,ctx_outputs.shape[1],1)
+        b = torch.cat((ctx_outputs,answ_last,torch.mul(ctx_outputs,answ_last)))
+
+        fused = torch.tanh(self.fusion(b))
+        # [bs, ctx_len, enc_hidden_dim*2]
+
+        hidden = self.to_dec(torch.cat((ctx_hidden[-2,:,:],ctx_hidden[-1,:,:]), dim=1))
+        # [1, bs, dec_hidden_dim]
+
+        return fused, hidden
 
 
 class Attention(nn.Module):
@@ -309,10 +396,10 @@ class Attention(nn.Module):
     def forward(self, dec_state, enc_states, att_mask):
 
         #enc_states = [bs, ctx_len, enc_hidden_dim*2]
-        #dec_state = [bs, dec_hidden_dim]
+        #dec_state = [1, bs, dec_hidden_dim]
         #att_mask = [bs, ctx_len]
 
-        dec_states = dec_state.unsqueeze(1).repeat(1,enc_states.shape[1],1)
+        dec_states = dec_state.squeeze(0).unsqueeze(1).repeat(1,enc_states.shape[1],1)
         # [bs, ctx_len, dec_hidden_dim]
 
         energy = torch.tanh(self.w(torch.cat((dec_states,enc_states), dim=2)))  
@@ -344,18 +431,17 @@ class Decoder(nn.Module):
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
 
-        self.rnn = nn.LSTM((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True)
+        self.rnn = nn.GRU((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True)
 
         self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)  
 
         self.dropout = nn.Dropout(dropout)
 
     
-    def forward(self, input, prev_hidden, prev_cell, enc_outputs, enc_mask):
+    def forward(self, input, prev_hidden, enc_outputs, enc_mask):
 
         #input = [bs]
-        #prev_hidden = [bs, dec_hidden_dim]
-        #prev_cell = [bs, dec_hidden_dim]
+        #prev_hidden = [1, bs, dec_hidden_dim]
         #enc_outputs = [bs, ctx_len, enc_hidden_dim*2]
         #enc_mask = [bs, ctx_len]
 
@@ -368,23 +454,16 @@ class Decoder(nn.Module):
         ctx_vector = self.attention(prev_hidden, enc_outputs, enc_mask)   
         # [bs, 1, enc_hidden_dim*2]
 
-        rnn_input_0 = torch.cat((qst_embeds,ctx_vector), dim=2)
+        rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
         # [bs, 1, (enc_hidden_dim*2) + emb_dim]
 
-        rnn_input_1 = prev_hidden.unsqueeze(0), prev_cell.unsqueeze(0)
-
-        rnn_out , (rnn_hidden, rnn_cell) = self.rnn(rnn_input_0,rnn_input_1)
+        rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
         # rnn_out = [bs, 1, dec_hidden_dim]
 
-        rnn_out = rnn_out.squeeze(1)          #[bs, dec_hidden_dim]
-        ctx_vector = ctx_vector.squeeze(1)    #[bs, enc_hidden_dim*2]
-        rnn_hidden = rnn_hidden.squeeze(0)
-        rnn_cell = rnn_cell.squeeze(0)
-
         dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=1))
-        # [bs, dec_output_dim]
+        # [bs, 1, dec_output_dim]
 
-        return dec_out, rnn_hidden, rnn_cell
+        return dec_out.squeeze(1), rnn_hidden
 
 
 

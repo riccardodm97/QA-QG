@@ -218,12 +218,11 @@ class Seq2Seq(nn.Module):
 
         enc_outputs, hidden = self.encoder(ctx_ids, answ_ids, answ_start, answ_end, ctx_lengths, answ_lengths)
 
-        input = qst_ids[:,0]    #TODO shape ? squeeze ? 
-        cell = torch.zeros(hidden.size(), device=self.device)
+        input = qst_ids[:,0]    
 
         for word_idx in range(1,trg_len):
 
-            dec_out, hidden, cell = self.decoder(input, hidden, cell, enc_outputs, ctx_mask)
+            dec_out, hidden = self.decoder(input, hidden, enc_outputs, ctx_mask)
 
             outputs[:,word_idx,:] = dec_out
 
