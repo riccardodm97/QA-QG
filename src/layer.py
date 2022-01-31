@@ -216,7 +216,7 @@ class Encoder(nn.Module):
         self.enc_hidden_dim = enc_hidden_dim
         self.dec_hidden_dim = dec_hidden_dim
 
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, device)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.ctx_rnn = nn.LSTM(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
@@ -306,11 +306,11 @@ class Attention(nn.Module):
         self.v = nn.Parameter(torch.rand(dec_hidden_dim),requires_grad=True)  
 
 
-    def forward(self, dec_state, enc_states, enc_mask):
+    def forward(self, dec_state, enc_states, att_mask):
 
         #enc_states = [bs, ctx_len, enc_hidden_dim*2]
         #dec_state = [bs, dec_hidden_dim]
-        #enc_mask = [bs, ctx_len]
+        #att_mask = [bs, ctx_len]
 
         dec_states = dec_state.unsqueeze(1).repeat(1,enc_states.shape[1],1)
         # [bs, ctx_len, dec_hidden_dim]
@@ -322,7 +322,7 @@ class Attention(nn.Module):
         # [bs, dec_hidden_dim, 1]
         
         att = torch.bmm(energy,v).squeeze(2)
-        att = att.masked_fill(enc_mask == 0, float('-inf'))  #avoid paying attention to pad tokens 
+        att = att.masked_fill(att_mask == 0, float('-inf'))  #avoid paying attention to pad or special tokens 
         # [bs, ctx_len]
 
         att_weights = F.softmax(att, dim=1)
