@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_se
 
 class EmbeddingLayer(nn.Module):
 
-    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, device = 'cpu'):
+    def __init__(self, vectors : np.ndarray, pad_idx : int, hook, drop_prob, device = 'cpu'):
         super().__init__()
 
         vectors = torch.from_numpy(vectors).to(device) 
@@ -16,10 +16,13 @@ class EmbeddingLayer(nn.Module):
         self.embed = nn.Embedding.from_pretrained(vectors, freeze = False, padding_idx = pad_idx)   #load pretrained weights in the layer 
 
         if hook is not None : self.embed.weight.register_hook(hook) 
+
+        self.dropout = nn.Dropout(drop_prob)
     
     def forward(self, to_embed):
 
         embeddings = self.embed(to_embed)
+        embeddings = self.dropout(embeddings)
         return embeddings
 
 

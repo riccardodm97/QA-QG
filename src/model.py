@@ -20,7 +20,7 @@ class DrQA(nn.Module):
             grad[words:] = 0
             return grad
         
-        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, device)
+        self.emb_layer = layer.EmbeddingLayer(weights_matrix, pad_idx, tune_embedding, dropout, device)
 
         self.context_bilstm = layer.StackedBiLSTM(self.emb_layer.embedding_dim* 2, hidden_dim, num_layers, dropout)
         
@@ -32,8 +32,6 @@ class DrQA(nn.Module):
         
         self.bilinear_attn_end = layer.BilinearAttentionLayer(hidden_dim*num_layers*self.num_directions,hidden_dim*num_layers*self.num_directions)
         
-        self.dropout = nn.Dropout(dropout)
-
         self.to(self.device)
     
     def get_model_name(self) -> str :
@@ -50,11 +48,9 @@ class DrQA(nn.Module):
         question_lengths = torch.count_nonzero(question_mask,dim=1)   # [bs]
         
         ctx_embed = self.emb_layer(context)
-        ctx_embed = self.dropout(ctx_embed)
         # [bs, len_c, emb_dim]
         
         qst_embed = self.emb_layer(question)
-        qst_embed = self.dropout(qst_embed)
         # [bs, len_q, emb_dim]
 
         align_embed = self.align_embedding(ctx_embed, qst_embed, question_mask)
