@@ -188,8 +188,8 @@ class Seq2Seq(nn.Module):
         self.device = device
         self.output_dim = output_dim
 
-        self.encoder = layer.Encoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
-        self.decoder = layer.Decoder(dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device )
+        self.encoder = layer.Encoder_baseline(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
+        self.decoder = layer.Decoder_baseline(dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device )
 
         self.to(device)
     
