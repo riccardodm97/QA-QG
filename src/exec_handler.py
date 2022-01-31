@@ -315,8 +315,8 @@ class QG_handler :
         DEC_HIDDEN = 256
         GRAD_CLIPPING = 10
         BATCH_SIZE = 64
-        LR = 0.002
-        DROPOUT = 0
+        LR = 0.001
+        DROPOUT = 0.5
         WEIGHT_DECAY = 0.01
         RANDOM_BATCH = False
 
