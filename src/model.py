@@ -193,7 +193,7 @@ class Seq2Seq(nn.Module):
     def get_model_name(self) -> str :
         raise NotImplementedError()
     
-    def get_att_mask(inputs):
+    def get_att_mask(self, inputs):
         raise NotImplementedError()
     
     def forward(self, inputs, teacher_force_ratio = 0.5):
@@ -228,31 +228,33 @@ class Seq2Seq(nn.Module):
 class BertQG(Seq2Seq):
 
     def __init__(self, dec_vectors, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
+        super().__init__(output_dim, device)
 
         self.encoder = layer.BertEncoder(dropout, device)
         self.decoder = layer.Decoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device)
 
-        super().__init__(output_dim, device)
+        
     
     def get_model_name(self) -> str :
         return 'BertQG'
     
-    def get_att_mask(inputs):
-        return  ~inputs['special_token_mask']  # & inputs['type_ids']  #TODO solo ctx o anche answ ? 
+    def get_att_mask(self, inputs):
+        return  ~inputs['special_tokens_mask']  # & inputs['type_ids']  #TODO solo ctx o anche answ ? 
 
 class RefNetQG(Seq2Seq):
 
     def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
+        super().__init__(output_dim, device)
 
         self.encoder = layer.RefNetEncoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
         self.decoder = layer.Decoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device )
 
-        super().__init__(output_dim, device)
+        
     
     def get_model_name(self) -> str :
         return 'RefNetQG'
     
-    def get_att_mask(inputs):
+    def get_att_mask(self, inputs):
         return inputs['context_mask']
     
     

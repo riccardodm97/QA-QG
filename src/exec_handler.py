@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 
-from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, RnnDataManagerQG, TransformerDataManager, QGDataManager
+from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, RnnDataManagerQG,  TransformerDataManager, BertDataManagerQG
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
@@ -303,6 +303,13 @@ class QA_handler :
             
         wandb.save(model_save_path)
 
+### 
+# 
+# 
+# END OF QA HANDLER AND START OF QG HHANDLER
+# 
+# 
+###
 
 class QG_handler : 
 
@@ -310,46 +317,88 @@ class QG_handler :
     
         squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
 
-        self.data_manager : DataManager = RnnDataManagerQG(squad_dataset, device)
-
-        N_EPOCHS = 15
-        ENC_HIDDEN = 256
-        DEC_HIDDEN = 256
-        GRAD_CLIPPING = 10
-        BATCH_SIZE = 64
-        LR = 0.001
-        DROPOUT = 0.5
-        WEIGHT_DECAY = 0.01
-        RANDOM_BATCH = False
-
-        #log model configuration   
-        wandb.config.n_epochs = N_EPOCHS
-        wandb.config.grad_clipping = GRAD_CLIPPING
-        wandb.config.batch_size = BATCH_SIZE
-        wandb.config.learning_rate = LR
-        wandb.config.dropout = DROPOUT
-        wandb.config.weight_decay = WEIGHT_DECAY
-        wandb.config.random_batch = RANDOM_BATCH
-
-        pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
-        vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
-        enc_embeddings = self.data_manager.enc_vectors
-        dec_embeddings = self.data_manager.dec_vectors
         
-        self.model = models.Seq2Seq(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,DROPOUT,device)
 
-        self.optimizer = optim.Adam(self.model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+        if model_name == 'RefNetQG':
+            self.data_manager : DataManager = RnnDataManagerQG(squad_dataset, device)
 
-        self.run_param = {
-            'n_epochs' : N_EPOCHS,
-            'grad_clipping' : GRAD_CLIPPING
-        }
+            N_EPOCHS = 15
+            ENC_HIDDEN = 256
+            DEC_HIDDEN = 256
+            GRAD_CLIPPING = 10
+            BATCH_SIZE = 64
+            LR = 0.001
+            DROPOUT = 0.5
+            WEIGHT_DECAY = 0.01
+            RANDOM_BATCH = False
 
-        self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
+            #log model configuration   
+            wandb.config.n_epochs = N_EPOCHS
+            wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.batch_size = BATCH_SIZE
+            wandb.config.learning_rate = LR
+            wandb.config.dropout = DROPOUT
+            wandb.config.weight_decay = WEIGHT_DECAY
+            wandb.config.random_batch = RANDOM_BATCH
 
-        self.criterion = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
+            pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
+            vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
+            enc_embeddings = self.data_manager.enc_vectors
+            dec_embeddings = self.data_manager.dec_vectors
+            
+            self.model = models.RefNetQG(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,DROPOUT,device)
 
-    
+            self.optimizer = optim.Adam(self.model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+
+            self.run_param = {
+                'n_epochs' : N_EPOCHS,
+                'grad_clipping' : GRAD_CLIPPING
+            }
+
+            self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
+
+            self.criterion = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
+        
+        elif model_name == 'BertQG':
+            self.data_manager : DataManager = BertDataManagerQG(squad_dataset, device) 
+            N_EPOCHS = 15
+            ENC_HIDDEN = 256
+            DEC_HIDDEN = 256
+            GRAD_CLIPPING = 10
+            BATCH_SIZE = 64
+            LR = 0.001
+            DROPOUT = 0.5
+            WEIGHT_DECAY = 0.01
+            RANDOM_BATCH = False
+
+            #log model configuration   
+            wandb.config.n_epochs = N_EPOCHS
+            wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.batch_size = BATCH_SIZE
+            wandb.config.learning_rate = LR
+            wandb.config.dropout = DROPOUT
+            wandb.config.weight_decay = WEIGHT_DECAY
+            wandb.config.random_batch = RANDOM_BATCH
+
+            pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
+            vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
+            # enc_embeddings = self.data_manager.enc_vectors #TODO: togliere ? 
+            dec_embeddings = self.data_manager.dec_vectors
+
+            self.model = models.BertQG(dec_embeddings, DEC_HIDDEN, vocab_size, pad_idx, DROPOUT, device)
+
+            self.optimizer = optim.Adam(self.model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+
+            self.run_param = {
+                'n_epochs' : N_EPOCHS,
+                'grad_clipping' : GRAD_CLIPPING
+            }
+
+            self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
+
+            self.criterion = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
+
+        
     def train_loop(self, iterator):
 
         start_time = time.perf_counter()
@@ -369,7 +418,7 @@ class QG_handler :
             ground_truth = batch['question_ids'][:,1:].contiguous().view(-1)
 
             loss = self.criterion(predictions,ground_truth) 
-               
+            
             #backward pass 
             loss.backward()
             
