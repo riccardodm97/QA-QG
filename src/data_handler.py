@@ -24,6 +24,8 @@ from datasets import Dataset
 import src.globals as globals
 import src.utils as utils 
 
+from spacy.lang.en import English
+
 logger = logging.getLogger(globals.LOG_NAME)
 
 class RawSquadDataset:
@@ -103,6 +105,23 @@ class RawSquadDataset:
         df = df.drop_duplicates()
 
         logger.info('saving dataframe in data folder as pickle file')
+
+        ########## NEW UPDATED DATASET ##########
+
+        nlp = English()
+        nlp.add_pipe('sentencizer')
+
+        df["context"] = df["context"].apply(lambda x: [sent.text for sent in nlp(x).sents])
+
+        df = df.explode("context", ignore_index=True)
+
+        df = df.drop(df[[x[0] not in x[1] for x in zip(df['answer'], df['context'])]].index)
+
+        df = (df.groupby(['context_id', 'question_id', 'title', 'question', 'answer', 'label_char'], sort = False).agg({'context': lambda x: ",".join(x)}).reset_index())
+        df = df[['context_id', 'question_id', 'title', 'context', 'question', 'answer', 'label_char']]
+
+        ########## NEW UPDATED DATASET ##########
+
         df.to_pickle(dataframe_path)
         logger.info('saved')
 
