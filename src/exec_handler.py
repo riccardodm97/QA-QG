@@ -317,9 +317,8 @@ class QG_handler :
     
         squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
 
-        
-
         if model_name == 'RefNetQG':
+
             self.data_manager : DataManager = RnnDataManagerQG(squad_dataset, device)
 
             N_EPOCHS = 15
@@ -354,22 +353,20 @@ class QG_handler :
                 'n_epochs' : N_EPOCHS,
                 'grad_clipping' : GRAD_CLIPPING
             }
-
-            self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
-
-            self.criterion = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
         
         elif model_name == 'BertQG':
+
             self.data_manager : DataManager = BertDataManagerQG(squad_dataset, device) 
-            N_EPOCHS = 15
-            ENC_HIDDEN = 256
-            DEC_HIDDEN = 256
+            
+            N_EPOCHS = 4
+            DEC_HIDDEN = 512
             GRAD_CLIPPING = 10
-            BATCH_SIZE = 64
+            BATCH_SIZE = 8
             LR = 0.001
-            DROPOUT = 0.5
-            WEIGHT_DECAY = 0.01
+            DROPOUT = 0.3
+            WEIGHT_DECAY = 0.001
             RANDOM_BATCH = False
+            GRAD_CLIPPING = 2.0
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -379,10 +376,11 @@ class QG_handler :
             wandb.config.dropout = DROPOUT
             wandb.config.weight_decay = WEIGHT_DECAY
             wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.dec_hidden = DEC_HIDDEN
+
 
             pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
             vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
-            # enc_embeddings = self.data_manager.enc_vectors #TODO: togliere ? 
             dec_embeddings = self.data_manager.dec_vectors
 
             self.model = models.BertQG(dec_embeddings, DEC_HIDDEN, vocab_size, pad_idx, DROPOUT, device)
@@ -394,9 +392,9 @@ class QG_handler :
                 'grad_clipping' : GRAD_CLIPPING
             }
 
-            self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
+        self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
 
-            self.criterion = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
+        self.criterion = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
 
         
     def train_loop(self, iterator):

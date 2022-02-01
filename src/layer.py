@@ -404,15 +404,11 @@ class RefNetEncoder(nn.Module):
 
 class BertEncoder(nn.Module):
 
-    def __init__(self, dropout = 0.1, device='cpu') :     
+    def __init__(self, dropout = 0.1) :     
         super().__init__()
-
-        self.device = device
 
         self.bert = BertModel.from_pretrained(globals.BERT_PRETRAINED)
         self.dropout = nn.Dropout(dropout)
-
-        self.to(device)
     
     def get_hidden_dim(self):
 

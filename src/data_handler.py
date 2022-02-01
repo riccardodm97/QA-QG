@@ -365,7 +365,7 @@ class RnnDataManagerQG(DataManager):
 
         super().__init__(dataset, device)
 
-        self.enc_vectors = utils.build_embedding_matrix('encoder',self.enc_tokenizer.get_vocab())   #loading embedding model first since it's needed for the tokenizer 
+        self.enc_vectors = utils.build_embedding_matrix('encoder',self.enc_tokenizer.get_vocab()) 
         self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab()) 
 
         end_time = time.perf_counter()
@@ -453,7 +453,7 @@ class BertDataManagerQG(DataManager):
 
         super().__init__(dataset,device)
 
-        self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab()) #TODO: è corretto metterlo quà ?
+        self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab()) 
 
         end_time = time.perf_counter()
         logger.info('elapsed time in building DataManager : %f',end_time-start_time)
