@@ -253,7 +253,7 @@ class Encoder(nn.Module):
     
     def get_hidden_dim(self):
 
-        return self.dec_hidden_dim
+        return self.enc_hidden_dim*2
 
     
     def forward(self, inputs):
@@ -350,9 +350,8 @@ class RefNetEncoder(nn.Module):
     
     def get_hidden_dim(self):
 
-        return self.dec_hidden_dim
+        return self.enc_hidden_dim*2
 
-    
     def forward(self, inputs):
 
         ctx_ids = inputs['context_ids']             # [bs, ctx_len]
@@ -396,7 +395,7 @@ class RefNetEncoder(nn.Module):
         fused = torch.tanh(self.fusion(b))
         # [bs, ctx_len, enc_hidden_dim*2]
 
-        hidden = self.to_dec(torch.cat((ctx_hidden[-2,:,:],ctx_hidden[-1,:,:]), dim=1))
+        hidden = self.to_dec(torch.cat((ctx_hidden[-2,:,:],ctx_hidden[-1,:,:]), dim=1)).unsqueeze(0)
         # [1, bs, dec_hidden_dim]
 
         return fused, hidden
@@ -433,34 +432,37 @@ class Attention(nn.Module):
     def __init__(self, dec_hidden_dim, enc_hidden_dim):
         super().__init__()
 
-        self.w = nn.Linear(dec_hidden_dim + (enc_hidden_dim*2), dec_hidden_dim, bias=False)  
+        self.w = nn.Linear(dec_hidden_dim+enc_hidden_dim, dec_hidden_dim, bias=False)  
         self.v = nn.Parameter(torch.rand(dec_hidden_dim),requires_grad=True)  
 
 
     def forward(self, dec_state, enc_states, att_mask):
 
-        #enc_states = [bs, ctx_len, enc_hidden_dim*2]
+        #enc_states = [bs, enc_len, enc_hidden_dim]
         #dec_state = [1, bs, dec_hidden_dim]
-        #att_mask = [bs, ctx_len]
+        #att_mask = [bs, enc_len]
 
         dec_states = dec_state.squeeze(0).unsqueeze(1).repeat(1,enc_states.shape[1],1)
-        # [bs, ctx_len, dec_hidden_dim]
+        # [bs, enc_len, dec_hidden_dim]
 
         energy = torch.tanh(self.w(torch.cat((dec_states,enc_states), dim=2)))  
-        # [bs, ctx_len, dec_hidden_dim]
+        # [bs, enc_len, dec_hidden_dim]
 
-        v = self.v.repeat(enc_states.shape[0],1).unsqueeze(2)
-        # [bs, dec_hidden_dim, 1]
+        energy = energy.permute(0,2,1)
+        # [bs, dec_hidden_dim, enc_len]
+
+        v = self.v.repeat(enc_states.shape[0],1).unsqueeze(1)
+        # [bs, 1, dec_hidden_dim]
         
-        att = torch.bmm(energy,v).squeeze(2)
+        att = torch.bmm(v,energy).squeeze(1)
         att = att.masked_fill(att_mask == 0, float('-inf'))  #avoid paying attention to pad or special tokens 
-        # [bs, ctx_len]
+        # [bs, enc_len]
 
         att_weights = F.softmax(att, dim=1)
-        # [bs, ctx_len]
+        # [bs, enc_len]
 
         att_out = torch.bmm(att_weights.unsqueeze(1), enc_states)
-        # [bs, 1, enc_hidden_dim*2]
+        # [bs, 1, enc_hidden_dim]
 
         return att_out
 
@@ -475,9 +477,9 @@ class Decoder(nn.Module):
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
 
-        self.rnn = nn.GRU((enc_hidden_dim*2)+self.emb_dim, dec_hidden_dim, batch_first=True)
+        self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
 
-        self.fc_out = nn.Linear((enc_hidden_dim*2)+dec_hidden_dim, dec_output_dim)  
+        self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim+self.emb_dim, dec_output_dim)  
 
         self.dropout = nn.Dropout(dropout)
 
@@ -496,15 +498,15 @@ class Decoder(nn.Module):
         # [bs, 1, emb_dim]
 
         ctx_vector = self.attention(prev_hidden, enc_outputs, enc_mask)   
-        # [bs, 1, enc_hidden_dim*2]
+        # [bs, 1, enc_hidden_dim]
 
         rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
-        # [bs, 1, (enc_hidden_dim*2) + emb_dim]
+        # [bs, 1, enc_hidden_dim + emb_dim]
 
         rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
-        # rnn_out = [bs, 1, dec_hidden_dim]
+        # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
 
-        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=2))
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
         # [bs, 1, dec_output_dim]
 
         return dec_out.squeeze(1), rnn_hidden

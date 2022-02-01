@@ -359,7 +359,7 @@ class QG_handler :
             self.data_manager : DataManager = BertDataManagerQG(squad_dataset, device) 
             
             N_EPOCHS = 4
-            DEC_HIDDEN = 512
+            DEC_HIDDEN = 768
             GRAD_CLIPPING = 10
             BATCH_SIZE = 8
             LR = 0.001

@@ -234,7 +234,6 @@ class BertQG(Seq2Seq):
 
         self.to(self.device)
 
-
     def get_model_name(self) -> str :
         return 'BertQG'
     
