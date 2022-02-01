@@ -449,7 +449,7 @@ class BertDecoder(nn.Module):
 
         self.rnn = nn.GRU(self.emb_dim, dec_hidden_dim, batch_first=True)
 
-        self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim+self.emb_dim, dec_output_dim)  
+        self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim, dec_output_dim)  
 
         self.dropout = nn.Dropout(dropout)
 
@@ -473,7 +473,7 @@ class BertDecoder(nn.Module):
         ctx_vector = self.attention(rnn_out, enc_outputs, enc_mask)   
         # [bs, 1, enc_hidden_dim]
 
-        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=2))
         # [bs, 1, dec_output_dim]
 
         return dec_out.squeeze(1), rnn_hidden

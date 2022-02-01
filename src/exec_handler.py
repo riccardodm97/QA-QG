@@ -421,7 +421,7 @@ class QG_handler :
         for batch in tqdm(iterator):
 
             #zero the gradients 
-            self.model.zero_grad(set_to_none=True)
+            # self.model.zero_grad(set_to_none=True)
             self.optimizer.zero_grad()        
 
             raw_pred = self.model(batch)

@@ -453,7 +453,7 @@ class BertDataManagerQG(DataManager):
 
         super().__init__(dataset,device)
 
-        self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab()) 
+        #self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab())  #TODO 
 
         end_time = time.perf_counter()
         logger.info('elapsed time in building DataManager : %f',end_time-start_time)
@@ -484,7 +484,7 @@ class BertDataManagerQG(DataManager):
         dec_tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
         dec_tokenizer.post_processor = processor 
  
-        dec_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=40000)   
+        dec_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=40000,min_frequency=2)   
 
         dec_text = self.dataset.train_df.question.to_list()
 

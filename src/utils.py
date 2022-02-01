@@ -198,7 +198,7 @@ def compute_qa_predictions(starts,ends):
 
 def compute_qg_predictions(raw_pred):
 
-    pred_logit = F.log_softmax(raw_pred, dim=2)
+    pred_logit = F.softmax(raw_pred, dim=2)
 
     return pred_logit.argmax(dim=2) 
 
