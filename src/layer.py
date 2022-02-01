@@ -387,10 +387,12 @@ class RefNetEncoder(nn.Module):
         answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
 
-        answ_last = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) # [bs, enc_hidden_dim*2]
+        answ_last = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) 
+        # [bs, enc_hidden_dim*2]
 
-        answ_last = answ_last.unsqueeze(1).repeat(1,ctx_outputs.shape[1],1)
+        answ_last = answ_last.unsqueeze(1)                 #.repeat(1,ctx_outputs.shape[1],1)
         b = torch.cat((ctx_outputs,answ_last,torch.mul(ctx_outputs,answ_last)))
+        # [bs, ctx_len, enc_hidden_dim*6]
 
         fused = torch.tanh(self.fusion(b))
         # [bs, ctx_len, enc_hidden_dim*2]
