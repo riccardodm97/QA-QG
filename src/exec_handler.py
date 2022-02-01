@@ -327,18 +327,24 @@ class QG_handler :
             GRAD_CLIPPING = 10
             BATCH_SIZE = 64
             LR = 0.001
+            EPS = 1e-08
             DROPOUT = 0.5
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
+            LR_SCHEDULER = False
+            WARMUP = 2000
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
+            wandb.config.epsilon = EPS
             wandb.config.dropout = DROPOUT
             wandb.config.weight_decay = WEIGHT_DECAY
             wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.lr_scheduler = LR_SCHEDULER
+            wandb.config.warmup = WARMUP
 
             pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
             vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
@@ -347,11 +353,12 @@ class QG_handler :
             
             self.model = models.RefNetQG(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,DROPOUT,device)
 
-            self.optimizer = optim.Adam(self.model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+            self.optimizer = optim.Adam(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
-                'grad_clipping' : GRAD_CLIPPING
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : LR_SCHEDULER
             }
         
         elif model_name == 'BertQG':
@@ -362,21 +369,26 @@ class QG_handler :
             DEC_HIDDEN = 768
             GRAD_CLIPPING = 10
             BATCH_SIZE = 8
-            LR = 0.001
-            DROPOUT = 0.3
-            WEIGHT_DECAY = 0.001
+            LR = 3e-5
+            EPS = 1e-08
+            DROPOUT = 0.1
+            WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
-            GRAD_CLIPPING = 2.0
+            LR_SCHEDULER = True
+            WARMUP = 2000
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
             wandb.config.grad_clipping = GRAD_CLIPPING
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
+            wandb.config.epsilon = EPS
             wandb.config.dropout = DROPOUT
             wandb.config.weight_decay = WEIGHT_DECAY
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.dec_hidden = DEC_HIDDEN
+            wandb.config.lr_scheduler = LR_SCHEDULER
+            wandb.config.warmup = WARMUP
 
 
             pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
@@ -385,15 +397,16 @@ class QG_handler :
 
             self.model = models.BertQG(dec_embeddings, DEC_HIDDEN, vocab_size, pad_idx, DROPOUT, device)
 
-            self.optimizer = optim.Adam(self.model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+            self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
-                'grad_clipping' : GRAD_CLIPPING
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : LR_SCHEDULER
             }
 
         self.dataloaders = self.data_manager.get_dataloader('train', BATCH_SIZE, RANDOM_BATCH), self.data_manager.get_dataloader('val', BATCH_SIZE, RANDOM_BATCH)
-
+        if LR_SCHEDULER: self.lr_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer, num_warmup_steps=WARMUP, num_training_steps=N_EPOCHS * len(self.dataloaders[0]))
         self.criterion = nn.CrossEntropyLoss(ignore_index=pad_idx).to(device)
 
         
@@ -425,6 +438,10 @@ class QG_handler :
 
             #update the gradients
             self.optimizer.step()
+
+            #update the learning rate
+            if self.run_param['lr_scheduler']:
+                self.lr_scheduler.step()
 
             pred = utils.compute_qg_predictions(raw_pred[:,1:])   
 
