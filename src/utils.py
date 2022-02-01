@@ -84,11 +84,11 @@ def build_embedding_matrix(type : str, vocab : dict) -> np.ndarray:
     emb_matrix_path = os.path.join(globals.DATA_FOLDER, f"{type}_emb_matrix.npy")
 
     if os.path.exists(emb_matrix_path): 
-        logger.info('loading embedding matrix from file')
+        logger.info(f'loading {type} embedding matrix from file')
         embedding_matrix = np.load(emb_matrix_path,allow_pickle=True)
     
     else : 
-        logger.info('Building embedding matrix...')
+        logger.info(f'Building {type} embedding matrix...')
 
         emb_model = load_glove_embedding()
         assert emb_model is not None, 'WARNING: empty embeddings model'

@@ -187,8 +187,6 @@ class Seq2Seq(nn.Module):
 
         self.device = device
         self.output_dim = output_dim
-
-        self.to(device)
     
     def get_model_name(self) -> str :
         raise NotImplementedError()
@@ -229,10 +227,13 @@ class BertQG(Seq2Seq):
 
     def __init__(self, dec_vectors, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
 
+        super().__init__(output_dim, device)
+
         self.encoder = layer.BertEncoder(dropout)
         self.decoder = layer.Decoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device)
 
-        super().__init__(output_dim, device)
+        self.to(self.device)
+
 
     def get_model_name(self) -> str :
         return 'BertQG'
@@ -244,10 +245,13 @@ class RefNetQG(Seq2Seq):
 
     def __init__(self, enc_vectors, dec_vectors, enc_hidden_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
 
-        self.encoder = layer.RefNetEncoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
-        self.decoder = layer.Decoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device )
-
         super().__init__(output_dim, device)
+
+        self.encoder = layer.RefNetEncoder(enc_vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device)
+        self.decoder = layer.Decoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device)
+
+        self.to(self.device)
+
 
     def get_model_name(self) -> str :
         return 'RefNetQG'
