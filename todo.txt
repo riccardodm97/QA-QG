@@ -10,17 +10,23 @@ TODO IMPORTANT QG
 - loss function avoid special tokens ✔
 - train val loop ✔
 - qg_hanlder ✔
-- dropout 
-- hidden_dims 
+- dropout ✔
+- hidden_dims ✔
 - pack_padded_sequence , pad_packed_sequence ✔
 - mask pad attention ✔
-- ancoder di bentrevett
+- testare tutto debug ✔
 - fix ha paper (no mean su lstm answer outputs ma ultimo hidden) ✔
+- decode batch ma senza contare gli id predetti dopo eos in true ✔
 - hook train embeddings
 - init weights 
-- testare tutto debug ✔
+- encoder di bentrevett
 - beam search / eval 
-- decode batch ma senza contare gli id predetti dopo eos in true 
+
+- attention dopo rnn
+- finire RefNet 
+- baseline enc e dec 
+- sentence answer anziche intero context 
+- ridurre output dim 
 
 
 

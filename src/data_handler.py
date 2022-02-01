@@ -150,7 +150,7 @@ class DataManager:
                 break
         
         #sort the dataframe in order to have the examples with similar context lenght close toghet
-        df.sort_values('context', key=lambda x:x.str.len(), ignore_index=True, inplace=True)
+        #df.sort_values('context', key=lambda x:x.str.len(), ignore_index=True, inplace=True)             #TODO decommentare o togliere 
 
         df_train = df[df['split']=='train'].reset_index(drop=True)
         df_val = df[df['split']=='val'].reset_index(drop=True)
