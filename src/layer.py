@@ -210,7 +210,7 @@ class BilinearAttentionLayer(nn.Module):
         return scores
 
 
-class Encoder(nn.Module):
+class BaseEncoder(nn.Module):
 
     def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, pad_idx, dropout, device):
         super().__init__()
@@ -230,27 +230,6 @@ class Encoder(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
     
-    def augment_embeddings(self,embeddings,answ_start,answ_end):
-
-        t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()   #TODO rename e spiegare cosa facciamo 
-        t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()
-        m = torch.mul(t1,t2).unsqueeze(-1)
-        augmented_emb = torch.cat((embeddings,m),dim=2)
-
-        return augmented_emb
-    
-    def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
-        
-        index = torch.vstack(list(pad_sequence([torch.arange(s,e+1) for s,e in zip(answ_start,answ_end)], batch_first=True)))
-
-        i = torch.arange(answ_embeds.shape[0]).reshape(answ_embeds.shape[0],1,1)
-        j = index.unsqueeze(-1)
-        k = torch.arange(ctx_out.shape[2])                   
-
-        c = ctx_out[i,j,k]
-
-        return torch.cat((c,answ_embeds),dim=2)
-    
     def get_hidden_dim(self):
 
         return self.enc_hidden_dim*2
@@ -267,15 +246,11 @@ class Encoder(nn.Module):
 
         ctx_lengths = torch.count_nonzero(ctx_mask,dim=1)    # [bs]   this is not the same as ctx_len as that is the max len in a batch 
         answ_lengths = torch.count_nonzero(answ_mask,dim=1)  # [bs]
- 
 
         ctx_embeds = self.emb_layer(ctx_ids)
         # [bs, ctx_len, emb_dim]
-        
-        augmented_ctx_emb = self.augment_embeddings(ctx_embeds,answ_start,answ_end)
-        # [bs, ctx_len, emb_dim+1]
 
-        packed_ctx_embeds = pack_padded_sequence(augmented_ctx_emb, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
+        packed_ctx_embeds = pack_padded_sequence(ctx_embeds, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
         ctx_outputs, ctx_hidden = self.ctx_rnn(packed_ctx_embeds)  
         ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
         # [bs, ctx_len, enc_hidden_dim*2]
@@ -283,10 +258,7 @@ class Encoder(nn.Module):
         answ_embeds = self.emb_layer(answ_ids)
         # [bs, answ_len, emb_dim]
 
-        answ_ctx = self.ctx2answ(answ_embeds,ctx_outputs,answ_start,answ_end)
-        # [bs, answ_len, enc_hidden_dim*2 + emb_dim]
-
-        packed_answ_ctx = pack_padded_sequence(answ_ctx, answ_lengths.cpu(), batch_first=True, enforce_sorted=False)
+        packed_answ_ctx = pack_padded_sequence(answ_embeds, answ_lengths.cpu(), batch_first=True, enforce_sorted=False)
         answ_outputs, answ_hidden = self.answ_rnn(packed_answ_ctx)
         answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
@@ -390,8 +362,8 @@ class RefNetEncoder(nn.Module):
         answ_last = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) 
         # [bs, enc_hidden_dim*2]
 
-        answ_last = answ_last.unsqueeze(1)                 #.repeat(1,ctx_outputs.shape[1],1)
-        b = torch.cat((ctx_outputs,answ_last,torch.mul(ctx_outputs,answ_last)))
+        answ_last = answ_last.unsqueeze(1).repeat(1,ctx_outputs.shape[1],1)
+        b = torch.cat((ctx_outputs,answ_last,torch.mul(ctx_outputs,answ_last)),dim=2)
         # [bs, ctx_len, enc_hidden_dim*6]
 
         fused = torch.tanh(self.fusion(b))
