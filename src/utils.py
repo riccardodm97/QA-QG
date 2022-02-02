@@ -94,25 +94,22 @@ def build_embedding_matrix(type : str, vocab : dict) -> np.ndarray:
         assert emb_model is not None, 'WARNING: empty embeddings model'
 
         embedding_dimension = emb_model.vector_size      #how many numbers each emb vector is composed of                                                           
-        embedding_matrix = np.zeros((len(vocab), embedding_dimension+2), dtype=np.float32)   #create a matrix initialized with all zeros 
+        embedding_matrix = np.zeros((len(vocab), embedding_dimension), dtype=np.float32)   #create a matrix initialized with all zeros 
 
         for word, idx in vocab.items():
-            if idx<4 : continue      #skip the first tokens as they are special tokens 
+            if idx<1 : continue      #skip the pad token 
             try:
                 embedding_vector = emb_model[word]
             except (KeyError, TypeError):
                 embedding_vector = np.random.uniform(low=-0.05, high=0.05, size=embedding_dimension)
 
-            embedding_matrix[idx,:-2] = embedding_vector    #assign the retrived or the generated vector to the corresponding index 
+            embedding_matrix[idx] = embedding_vector    #assign the retrived or the generated vector to the corresponding index 
         
         unk = np.mean(emb_model.vectors, axis=0)
         if unk in emb_model.vectors:
             unk = np.random.uniform(low=-0.05, high=0.05,size=embedding_dimension)    
 
-        embedding_matrix[vocab[globals.UNK_TOKEN],:-2] = unk      # add the unk token embedding  
-
-        embedding_matrix[vocab[globals.SOS_TOKEN],300] = 1.0
-        embedding_matrix[vocab[globals.EOS_TOKEN],301] = 1.0
+        embedding_matrix[vocab[globals.UNK_TOKEN]] = unk      # add the unk token embedding  
 
         logger.info(f"built embedding matrix with shape: {embedding_matrix.shape}")
 

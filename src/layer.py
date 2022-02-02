@@ -260,9 +260,10 @@ class BaseEncoder(nn.Module):
 
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, dropout, False, device)
         self.emb_dim = self.emb_layer.embedding_dim
+        self.align = AlignQuestionEmbedding(self.emb_dim)
 
-        self.ctx_rnn = nn.GRU(self.emb_dim+1, enc_hidden_dim, batch_first=True, bidirectional=True)
-        self.answ_rnn = nn.GRU((self.enc_hidden_dim*2)+self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.ctx_rnn = nn.GRU(self.emb_dim*2, enc_hidden_dim, batch_first=True, bidirectional=True)
+        self.answ_rnn = nn.GRU(self.emb_dim, enc_hidden_dim, batch_first=True, bidirectional=True)
 
         self.answ_proj = nn.Linear(enc_hidden_dim*2, enc_hidden_dim*2, bias=False)  
         self.fusion = nn.Linear(enc_hidden_dim*2, dec_hidden_dim)
@@ -287,21 +288,27 @@ class BaseEncoder(nn.Module):
         ctx_embeds = self.emb_layer(ctx_ids)
         # [bs, ctx_len, emb_dim]
 
-        packed_ctx_embeds = pack_padded_sequence(ctx_embeds, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
-        ctx_outputs, ctx_hidden = self.ctx_rnn(packed_ctx_embeds)  
-        ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
-        # [bs, ctx_len, enc_hidden_dim*2]
-
         answ_embeds = self.emb_layer(answ_ids)
         # [bs, answ_len, emb_dim]
 
-        packed_answ_ctx = pack_padded_sequence(answ_embeds, answ_lengths.cpu(), batch_first=True, enforce_sorted=False)
-        answ_outputs, answ_hidden = self.answ_rnn(packed_answ_ctx)
+        answ_aligned = self.align(ctx_embeds,answ_embeds,answ_mask)
+        # [bs, answ_len, emb_dim]
+
+        rnn_input =  torch.cat([ctx_embeds, answ_aligned], dim=2)
+        # [bs, ctx_len, emb_dim*2]
+
+        packed_ctx = pack_padded_sequence(rnn_input, ctx_lengths.cpu(), batch_first=True, enforce_sorted=False)
+        ctx_outputs, ctx_hidden = self.ctx_rnn(packed_ctx)  
+        ctx_outputs, _ = pad_packed_sequence(ctx_outputs, batch_first=True) 
+        # [bs, ctx_len, enc_hidden_dim*2]
+
+        packed_answ = pack_padded_sequence(answ_embeds, answ_lengths.cpu(), batch_first=True, enforce_sorted=False)
+        answ_outputs, answ_hidden = self.answ_rnn(packed_answ)
         answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
 
         answ_reduced = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) # [bs, enc_hidden_dim*2]
-        ctx_reduced = torch.mean(ctx_outputs,dim=1) # [bs, enc_hidden_dim*2]              
+        ctx_reduced = torch.mean(ctx_outputs, dim=1) # [bs, enc_hidden_dim*2]              
 
         projected_answ = self.answ_proj(answ_reduced)  
         # [bs, enc_hidden_dim*2]
@@ -309,10 +316,122 @@ class BaseEncoder(nn.Module):
         ctx_answ_fusion = torch.add(projected_answ,ctx_reduced)
         # [bs, enc_hidden_dim*2]
 
-        hidden = torch.tanh(self.fusion(ctx_answ_fusion)).unsqueeze(0)
+        hidden = self.fusion(ctx_answ_fusion).unsqueeze(0)
         # [1, bs, dec_hidden_dim]
 
         return ctx_outputs, hidden
+
+class BaseDecoder(nn.Module):
+
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
+        super().__init__()
+
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, False, device)
+        self.emb_dim = self.emb_layer.embedding_dim
+
+        self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
+
+        self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
+
+        self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim+self.emb_dim, dec_output_dim)  
+
+        self.dropout = nn.Dropout(dropout)
+
+    
+    def forward(self, input, prev_hidden, enc_outputs, enc_mask):
+
+        #input = [bs]
+        #prev_hidden = [1, bs, dec_hidden_dim]
+        #enc_outputs = [bs, ctx_len, enc_hidden_dim]
+        #enc_mask = [bs, ctx_len]
+
+        input = input.unsqueeze(1)
+        # [bs, 1]
+
+        qst_embeds = self.emb_layer(input)
+        # [bs, 1, emb_dim]
+
+        ctx_vector = self.attention(prev_hidden.permute(1,0,2), enc_outputs, enc_mask)   
+        # [bs, 1, enc_hidden_dim]
+
+        rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
+        # [bs, 1, enc_hidden_dim + emb_dim]
+
+        rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
+        # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
+
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
+        # [bs, 1, dec_output_dim]
+
+        return dec_out.squeeze(1), rnn_hidden
+
+class BertEncoder(nn.Module):
+
+    def __init__(self, dropout = 0.1) :     
+        super().__init__()
+
+        self.bert = BertModel.from_pretrained(globals.BERT_PRETRAINED)
+        self.dropout = nn.Dropout(dropout)
+    
+    def get_hidden_dim(self):
+
+        return self.bert.config.hidden_size
+    
+    def forward(self, inputs):   
+       
+        ids = inputs['ctx_answ_ids']                  # [bs, len_text]
+        mask = inputs['ctx_answ_mask']                # [bs, len_text]
+        type_ids = inputs['type_ids']                 # [bs, len_text]
+
+        bert_outputs = self.bert(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
+
+        outputs = self.dropout(bert_outputs[0])
+        # [bs, len_txt, bert_hidden_dim]
+
+        return outputs, bert_outputs[1].unsqueeze(0)
+
+
+class BertDecoder(nn.Module):
+
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
+        super().__init__()
+
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, False, device)        
+        self.emb_dim = self.emb_layer.embedding_dim
+
+        self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
+
+        self.rnn = nn.GRU(self.emb_dim, dec_hidden_dim, batch_first=True)
+
+        self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim, dec_output_dim)  
+
+        self.dropout = nn.Dropout(dropout)
+
+    
+    def forward(self, input, prev_hidden, enc_outputs, enc_mask):
+
+        #input = [bs]
+        #prev_hidden = [1, bs, dec_hidden_dim]
+        #enc_outputs = [bs, ctx_len, enc_hidden_dim]
+        #enc_mask = [bs, ctx_len]
+
+        input = input.unsqueeze(1)
+        # [bs, 1]
+
+        qst_embeds = self.emb_layer(input)
+        # [bs, 1, emb_dim]
+
+        rnn_out , rnn_hidden = self.rnn(qst_embeds,prev_hidden)
+        # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
+
+        ctx_vector = self.attention(rnn_out, enc_outputs, enc_mask)   
+        # [bs, 1, enc_hidden_dim]
+
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=2))
+        # [bs, 1, dec_output_dim]
+
+        return dec_out.squeeze(1), rnn_hidden
+
 
 
 class RefNetEncoder(nn.Module):
@@ -409,119 +528,8 @@ class RefNetEncoder(nn.Module):
         # [1, bs, dec_hidden_dim]
 
         return fused, hidden
-
-
-class BertEncoder(nn.Module):
-
-    def __init__(self, dropout = 0.1) :     
-        super().__init__()
-
-        self.bert = BertModel.from_pretrained(globals.BERT_PRETRAINED)
-        self.dropout = nn.Dropout(dropout)
-    
-    def get_hidden_dim(self):
-
-        return self.bert.config.hidden_size
-    
-    def forward(self, inputs):   
-       
-        ids = inputs['ctx_answ_ids']                  # [bs, len_text]
-        mask = inputs['ctx_answ_mask']                # [bs, len_text]
-        type_ids = inputs['type_ids']                 # [bs, len_text]
-
-        bert_outputs = self.bert(input_ids = ids, attention_mask = mask, token_type_ids = type_ids)
-
-        outputs = self.dropout(bert_outputs[0])
-        # [bs, len_txt, bert_hidden_dim]
-
-        return outputs, bert_outputs[1].unsqueeze(0)
-
-
-class BertDecoder(nn.Module):
-
-    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
-        super().__init__()
-
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, False, device)        
-        self.emb_dim = self.emb_layer.embedding_dim
-
-        self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
-
-        self.rnn = nn.GRU(self.emb_dim, dec_hidden_dim, batch_first=True)
-
-        self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim, dec_output_dim)  
-
-        self.dropout = nn.Dropout(dropout)
-
-    
-    def forward(self, input, prev_hidden, enc_outputs, enc_mask):
-
-        #input = [bs]
-        #prev_hidden = [1, bs, dec_hidden_dim]
-        #enc_outputs = [bs, ctx_len, enc_hidden_dim]
-        #enc_mask = [bs, ctx_len]
-
-        input = input.unsqueeze(1)
-        # [bs, 1]
-
-        qst_embeds = self.emb_layer(input)
-        # [bs, 1, emb_dim]
-
-        rnn_out , rnn_hidden = self.rnn(qst_embeds,prev_hidden)
-        # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
-
-        ctx_vector = self.attention(rnn_out, enc_outputs, enc_mask)   
-        # [bs, 1, enc_hidden_dim]
-
-        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=2))
-        # [bs, 1, dec_output_dim]
-
-        return dec_out.squeeze(1), rnn_hidden
     
 
-class BaseDecoder(nn.Module):
-
-    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
-        super().__init__()
-
-        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, False, device)
-        self.emb_dim = self.emb_layer.embedding_dim
-
-        self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
-
-        self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
-
-        self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim+self.emb_dim, dec_output_dim)  
-
-        self.dropout = nn.Dropout(dropout)
-
-    
-    def forward(self, input, prev_hidden, enc_outputs, enc_mask):
-
-        #input = [bs]
-        #prev_hidden = [1, bs, dec_hidden_dim]
-        #enc_outputs = [bs, ctx_len, enc_hidden_dim]
-        #enc_mask = [bs, ctx_len]
-
-        input = input.unsqueeze(1)
-        # [bs, 1]
-
-        qst_embeds = self.emb_layer(input)
-        # [bs, 1, emb_dim]
-
-        ctx_vector = self.attention(prev_hidden.permute(1,0,2), enc_outputs, enc_mask)   
-        # [bs, 1, enc_hidden_dim]
-
-        rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
-        # [bs, 1, enc_hidden_dim + emb_dim]
-
-        rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
-        # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
-
-        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
-        # [bs, 1, dec_output_dim]
-
-        return dec_out.squeeze(1), rnn_hidden
 
 
 

@@ -236,10 +236,11 @@ class BaselineQg(Seq2Seq):
 
 
     def get_model_name(self) -> str :
-        return 'RefNetQG'
+        return 'BaseQG'
     
     def get_att_mask(self, inputs):
         return inputs['context_mask']
+
 
 class BertQG(Seq2Seq):
 

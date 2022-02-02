@@ -309,7 +309,50 @@ class QG_handler :
     
         squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
 
-        if model_name == 'RefNetQG':
+        if model_name == 'BaseQG':
+
+            self.data_manager : DataManager = RnnDataManagerQG(squad_dataset, device)
+
+            N_EPOCHS = 15
+            ENC_HIDDEN = 512
+            DEC_HIDDEN = 512
+            GRAD_CLIPPING = 1.0
+            BATCH_SIZE = 64
+            LR = 0.05
+            DROPOUT = 0.5
+            WEIGHT_DECAY = 0.001
+            MOMENTUM = 0.9
+            RANDOM_BATCH = False
+            LR_SCHEDULER = False
+
+
+            #log model configuration   
+            wandb.config.n_epochs = N_EPOCHS
+            wandb.config.grad_clipping = GRAD_CLIPPING
+            wandb.config.batch_size = BATCH_SIZE
+            wandb.config.learning_rate = LR
+            wandb.config.dropout = DROPOUT
+            wandb.config.weight_decay = WEIGHT_DECAY
+            wandb.config.random_batch = RANDOM_BATCH
+            wandb.config.lr_scheduler = LR_SCHEDULER
+            wandb.config.momentum = MOMENTUM
+
+            pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
+            vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
+            enc_embeddings = self.data_manager.enc_vectors
+            dec_embeddings = self.data_manager.dec_vectors
+            
+            self.model = models.BaselineQg(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,DROPOUT,device)
+
+            self.optimizer = optim.SGD(self.model.parameters(),lr=LR,momentum=MOMENTUM,weight_decay=WEIGHT_DECAY)
+
+            self.run_param = {
+                'n_epochs' : N_EPOCHS,
+                'grad_clipping' : GRAD_CLIPPING,
+                'lr_scheduler' : LR_SCHEDULER
+            }
+
+        elif model_name == 'RefNetQG':
 
             self.data_manager : DataManager = RnnDataManagerQG(squad_dataset, device)
 
@@ -413,7 +456,6 @@ class QG_handler :
         for batch in tqdm(iterator):
 
             #zero the gradients 
-            # self.model.zero_grad(set_to_none=True)
             self.optimizer.zero_grad()        
 
             raw_pred = self.model(batch)

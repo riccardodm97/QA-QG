@@ -397,7 +397,7 @@ class RnnDataManagerQG(DataManager):
 
         #trainers for fitting the two tokenizers on the dataset
         enc_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=65000)  #TODO size 
-        dec_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=40000)   
+        dec_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=40000,min_frequency=2)   
 
         #which part of the dataset each tokenizer focuses on 
         enc_text = self.dataset.train_df.context.to_list() + self.dataset.train_df.answer.to_list()
