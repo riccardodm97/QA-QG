@@ -453,7 +453,7 @@ class BertDataManagerQG(DataManager):
 
         super().__init__(dataset,device)
 
-        #self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab())  #TODO 
+        self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab())  #TODO 
 
         end_time = time.perf_counter()
         logger.info('elapsed time in building DataManager : %f',end_time-start_time)

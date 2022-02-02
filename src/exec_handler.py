@@ -303,14 +303,6 @@ class QA_handler :
             
         wandb.save(model_save_path)
 
-### 
-# 
-# 
-# END OF QA HANDLER AND START OF QG HHANDLER
-# 
-# 
-###
-
 class QG_handler : 
 
     def __init__(self, model_name, dataset_path, device):
@@ -376,7 +368,6 @@ class QG_handler :
             RANDOM_BATCH = False
             LR_SCHEDULER = True
             WARMUP = 2000
-            EMB_DIM = 512
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -390,13 +381,14 @@ class QG_handler :
             wandb.config.dec_hidden = DEC_HIDDEN
             wandb.config.lr_scheduler = LR_SCHEDULER
             wandb.config.warmup = WARMUP
-            wandb.config.emb_dim = EMB_DIM
 
 
             pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
             vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
+            dec_embeddings = self.data_manager.dec_vectors
 
-            self.model = models.BertQG(EMB_DIM, DEC_HIDDEN, vocab_size, pad_idx, DROPOUT, device)
+
+            self.model = models.BertQG(dec_embeddings, DEC_HIDDEN, vocab_size, pad_idx, DROPOUT, device)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
 

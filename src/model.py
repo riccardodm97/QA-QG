@@ -243,12 +243,12 @@ class BaselineQg(Seq2Seq):
 
 class BertQG(Seq2Seq):
 
-    def __init__(self, emb_dim, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
+    def __init__(self, dec_vectors, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
 
         super().__init__(output_dim, device)
 
         self.encoder = layer.BertEncoder(dropout)
-        self.decoder = layer.BertDecoder(emb_dim, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device)
+        self.decoder = layer.BertDecoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device)
 
         self.to(self.device)
 

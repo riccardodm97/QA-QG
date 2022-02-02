@@ -439,10 +439,10 @@ class BertEncoder(nn.Module):
 
 class BertDecoder(nn.Module):
 
-    def __init__(self, emb_dim, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
+    def __init__(self, vectors, enc_hidden_dim, dec_hidden_dim, dec_output_dim, pad_idx, dropout, device):
         super().__init__()
 
-        self.emb_layer = nn.Embedding(dec_output_dim, emb_dim, padding_idx=pad_idx)
+        self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, False, device)        
         self.emb_dim = self.emb_layer.embedding_dim
 
         self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
@@ -458,7 +458,7 @@ class BertDecoder(nn.Module):
 
         #input = [bs]
         #prev_hidden = [1, bs, dec_hidden_dim]
-        #enc_outputs = [bs, ctx_len, enc_hidden_dim*2]
+        #enc_outputs = [bs, ctx_len, enc_hidden_dim]
         #enc_mask = [bs, ctx_len]
 
         input = input.unsqueeze(1)
@@ -509,7 +509,7 @@ class BaseDecoder(nn.Module):
         qst_embeds = self.emb_layer(input)
         # [bs, 1, emb_dim]
 
-        ctx_vector = self.attention(prev_hidden, enc_outputs, enc_mask)   
+        ctx_vector = self.attention(prev_hidden.permute(1,0,2), enc_outputs, enc_mask)   
         # [bs, 1, enc_hidden_dim]
 
         rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
