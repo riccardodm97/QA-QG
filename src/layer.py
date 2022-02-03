@@ -270,7 +270,7 @@ class BaseAttention(nn.Module):
         # energy = [bs, ctx_len, dec_hid_dim]
 
         attention = self.v(energy).squeeze(2)
-        #attention = attention.masked_fill(att_mask == 0, float('-inf'))
+        #attention = attention.masked_fill(att_mask == 0, float('-inf'))  #TODO 
         # attention = [bs, ctx_len]
 
         att_weights = F.softmax(attention, dim=1)
@@ -383,16 +383,28 @@ class BaseDecoder(nn.Module):
         qst_embeds = self.emb_layer(input)
         # [bs, 1, emb_dim]
 
-        ctx_vector = self.attention(prev_hidden.permute(1,0,2), enc_outputs, enc_mask)   
-        # [bs, 1, enc_hidden_dim]
+        ########### VERSIONE1 ###########  #TODO 
+        # ctx_vector = self.attention(prev_hidden.permute(1,0,2), enc_outputs, enc_mask)   
+        # # [bs, 1, enc_hidden_dim]
 
-        rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
-        # [bs, 1, enc_hidden_dim + emb_dim]
+        # rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
+        # # [bs, 1, enc_hidden_dim + emb_dim]
 
-        rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
+        # rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
+        # # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
+
+        # dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
+        # [bs, 1, dec_output_dim]
+
+        ########### VERSIONE2 ###########
+
+        rnn_out , rnn_hidden = self.rnn(qst_embeds,prev_hidden)
         # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
 
-        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
+        ctx_vector = self.attention(rnn_out, enc_outputs, enc_mask)   
+        # [bs, 1, enc_hidden_dim]
+
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=2))
         # [bs, 1, dec_output_dim]
 
         return dec_out.squeeze(1), rnn_hidden
