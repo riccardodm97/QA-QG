@@ -24,6 +24,9 @@ from datasets import Dataset
 import src.globals as globals
 import src.utils as utils
 
+from spacy.lang.en import English
+import string
+
 logger = logging.getLogger(globals.LOG_NAME)
 
 class RawSquadDataset:
@@ -101,6 +104,18 @@ class RawSquadDataset:
         df = df[columns+not_pres]
 
         df = df.drop_duplicates()
+
+        nlp = English()
+        nlp.add_pipe('sentencizer')
+
+        df["context"] = df["context"].apply(lambda x: [str(sent.text).lstrip(string.punctuation + string.whitespace) for sent in nlp(x).sents])
+
+        df = df.explode("context", ignore_index=True)
+
+        df = df.drop(df[[x[0] not in x[1] for x in zip(df['answer'], df['context'])]].index)
+
+        df = (df.groupby(['context_id', 'question_id', 'title', 'question', 'answer', 'label_char'], sort = False).agg({'context': lambda x: " ".join(x)}).reset_index())
+        df = df[['context_id', 'question_id', 'title', 'context', 'question', 'answer', 'label_char']]
 
         logger.info('saving dataframe in data folder as pickle file')
         df.to_pickle(dataframe_path)
@@ -433,8 +448,8 @@ class RnnDataManagerQG(DataManager):
                 'context_mask': torch.tensor([e.attention_mask for e in context_encodings], device=self.device),
                 'answer_mask': torch.tensor([e.attention_mask for e in answer_encodings], device=self.device),
                 'question_mask': torch.tensor([e.attention_mask for e in question_encodings], device=self.device),
-                'answer_token_start': torch.tensor([e.char_to_token(starts[i],1) for i,e in enumerate(context_encodings)], device=self.device),
-                'answer_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(context_encodings)], device=self.device),
+                # 'answer_token_start': torch.tensor([e.char_to_token(starts[i],1) for i,e in enumerate(context_encodings)], device=self.device),
+                # 'answer_token_end': torch.tensor([e.char_to_token(ends[i]-1,1) for i,e in enumerate(context_encodings)], device=self.device),
             }
 
             return batch
