@@ -76,14 +76,14 @@ def main(dataset_path: str, model_name : str):
 
     logger.info('starting evaluation pipeline')
 
-    d = QA_OBJECTS[model_name].datamanager    #TODO change names 
+    d = QA_OBJECTS[model_name].datamanager    
     m = QA_OBJECTS[model_name].model
 
     test_dataset = RawSquadDataset(test_dataset_path = dataset_path)
 
     data_manager : DataManager = d(test_dataset, device) 
 
-    test_dataloader = data_manager.get_dataloader('test', 8)    #TODO 8 is only for Transformers 
+    test_dataloader = data_manager.get_dataloader('test', 8)    
 
     model_param = get_model_params(model_name, data_manager, device)
 

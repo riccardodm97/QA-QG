@@ -148,9 +148,6 @@ class DataManager:
                 df.loc[row[0],'split'] = 'train'
             else :
                 break
-        
-        #sort the dataframe in order to have the examples with similar context lenght close toghet
-        #df.sort_values('context', key=lambda x:x.str.len(), ignore_index=True, inplace=True)             #TODO decommentare o togliere 
 
         df_train = df[df['split']=='train'].reset_index(drop=True)
         df_val = df[df['split']=='val'].reset_index(drop=True)
@@ -168,8 +165,8 @@ class DataManager:
         else:
             sampler = BatchSampler(SequentialSampler(dataset), batch_size=batch_size, drop_last=False)
     
-        return DataLoader(dataset,sampler=sampler,batch_size=None)  #TODO num_workers 
-        
+        return DataLoader(dataset,sampler=sampler,batch_size=None)  
+
     
     def _build_hf_dataset(self, df : pd.DataFrame, has_answers : bool = True):  
 
@@ -388,7 +385,7 @@ class RnnDataManagerQG(DataManager):
         enc_tokenizer = Tokenizer(WordLevel(unk_token=globals.UNK_TOKEN))
         enc_tokenizer.normalizer = BertNormalizer(handle_chinese_chars=False) 
         enc_tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
-        # enc_tokenizer.post_processor = processor # TODO 
+        # enc_tokenizer.post_processor = processor  
 
         dec_tokenizer = Tokenizer(WordLevel(unk_token=globals.UNK_TOKEN))
         dec_tokenizer.normalizer = BertNormalizer(handle_chinese_chars=False) 
@@ -396,7 +393,7 @@ class RnnDataManagerQG(DataManager):
         dec_tokenizer.post_processor = processor 
 
         #trainers for fitting the two tokenizers on the dataset
-        enc_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=65000)  #TODO size 
+        enc_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=65000)  
         dec_trainer = WordLevelTrainer(special_tokens=[globals.PAD_TOKEN,globals.UNK_TOKEN,globals.SOS_TOKEN,globals.EOS_TOKEN],vocab_size=40000,min_frequency=2)   
 
         #which part of the dataset each tokenizer focuses on 
@@ -453,7 +450,7 @@ class BertDataManagerQG(DataManager):
 
         super().__init__(dataset,device)
 
-        self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab())  #TODO 
+        self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab()) 
 
         end_time = time.perf_counter()
         logger.info('elapsed time in building DataManager : %f',end_time-start_time)

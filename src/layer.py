@@ -270,7 +270,7 @@ class BaseAttention(nn.Module):
         # energy = [bs, ctx_len, dec_hid_dim]
 
         attention = self.v(energy).squeeze(2)
-        #attention = attention.masked_fill(att_mask == 0, float('-inf'))  #TODO 
+        attention = attention.masked_fill(att_mask == 0, float('-inf'))  
         # attention = [bs, ctx_len]
 
         att_weights = F.softmax(attention, dim=1)
@@ -489,7 +489,7 @@ class RefNetEncoder(nn.Module):
     
     def augment_embeddings(self,embeddings,answ_start,answ_end):
 
-        t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()   #TODO rename e spiegare cosa facciamo 
+        t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()   
         t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()
         m = torch.mul(t1,t2).unsqueeze(-1)
         augmented_emb = torch.cat((embeddings,m),dim=2)

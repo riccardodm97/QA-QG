@@ -257,8 +257,7 @@ class BertQG(Seq2Seq):
         return 'BertQG'
     
     def get_att_mask(self, inputs):
-        return  ~inputs['special_tokens_mask']  # & inputs['type_ids']  #TODO solo ctx o anche answ ? 
-
+        return  ~inputs['special_tokens_mask']  
 
 class RefNetQG(Seq2Seq):
 

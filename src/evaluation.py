@@ -33,7 +33,7 @@ def normalize_answer(s):
 
 def get_tokens(s):
   if not s: return []
-  return normalize_answer(s).split() #TODO: debug
+  return normalize_answer(s).split() 
 
 def compute_exact(true, pred):
     return float(normalize_answer(true) == normalize_answer(pred))
