@@ -319,8 +319,7 @@ class QG_handler :
             GRAD_CLIPPING = 1.0
             BATCH_SIZE = 64
             LR = 0.001
-            DROPOUT = 0.5
-            WEIGHT_DECAY = 0.01
+            DROPOUT = 0.3
             RANDOM_BATCH = False
             LR_SCHEDULER = False
 
@@ -331,7 +330,6 @@ class QG_handler :
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.dropout = DROPOUT
-            wandb.config.weight_decay = WEIGHT_DECAY
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.lr_scheduler = LR_SCHEDULER
 
@@ -342,7 +340,7 @@ class QG_handler :
             
             self.model = models.BaselineQg(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,DROPOUT,device)
 
-            self.optimizer = optim.Adam(self.model.parameters(),lr=LR, weight_decay=WEIGHT_DECAY)
+            self.optimizer = optim.Adam(self.model.parameters(),lr=LR)
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
