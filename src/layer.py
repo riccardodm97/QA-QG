@@ -363,7 +363,10 @@ class BaseDecoder(nn.Module):
 
         self.attention = BaseAttention(dec_hidden_dim, enc_hidden_dim)
 
-        self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
+        ########### VERSIONE1 ###########  #TODO 
+        # self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
+        ########### VERSIONE2 ###########  #TODO 
+        self.rnn = nn.GRU(self.emb_dim, dec_hidden_dim, batch_first=True)
 
         self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim+self.emb_dim, dec_output_dim)  
 
