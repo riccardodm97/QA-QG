@@ -270,7 +270,7 @@ class BaseAttention(nn.Module):
         # energy = [bs, ctx_len, dec_hid_dim]
 
         attention = self.v(energy).squeeze(2)
-        attention = attention.masked_fill(att_mask == 0, float('-inf'))
+        #attention = attention.masked_fill(att_mask == 0, float('-inf'))
         # attention = [bs, ctx_len]
 
         att_weights = F.softmax(attention, dim=1)
