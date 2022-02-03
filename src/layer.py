@@ -404,7 +404,7 @@ class BaseDecoder(nn.Module):
         ctx_vector = self.attention(rnn_out, enc_outputs, enc_mask)   
         # [bs, 1, enc_hidden_dim]
 
-        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector), dim=2))
+        dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
         # [bs, 1, dec_output_dim]
 
         return dec_out.squeeze(1), rnn_hidden
