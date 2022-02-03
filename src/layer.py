@@ -363,11 +363,8 @@ class BaseDecoder(nn.Module):
 
         self.attention = BaseAttention(dec_hidden_dim, enc_hidden_dim)
 
-        ########### VERSIONE1 ###########  #TODO 
-        # self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
-        ########### VERSIONE2 ###########  #TODO 
-        self.rnn = nn.GRU(self.emb_dim, dec_hidden_dim, batch_first=True)
-
+        self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
+        
         self.fc_out = nn.Linear(enc_hidden_dim+dec_hidden_dim+self.emb_dim, dec_output_dim)  
 
         self.dropout = nn.Dropout(dropout)
@@ -386,29 +383,17 @@ class BaseDecoder(nn.Module):
         qst_embeds = self.emb_layer(input)
         # [bs, 1, emb_dim]
 
-        ########### VERSIONE1 ###########  #TODO 
-        # ctx_vector = self.attention(prev_hidden.permute(1,0,2), enc_outputs, enc_mask)   
-        # # [bs, 1, enc_hidden_dim]
-
-        # rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
-        # # [bs, 1, enc_hidden_dim + emb_dim]
-
-        # rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
-        # # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
-
-        # dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
-        # [bs, 1, dec_output_dim]
-
-        ########### VERSIONE2 ###########
-
-        rnn_out , rnn_hidden = self.rnn(qst_embeds,prev_hidden)
-        # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
-
-        ctx_vector = self.attention(rnn_out, enc_outputs, enc_mask)   
+        ctx_vector = self.attention(prev_hidden.permute(1,0,2), enc_outputs, enc_mask)   
         # [bs, 1, enc_hidden_dim]
 
+        rnn_input = torch.cat((qst_embeds,ctx_vector), dim=2)
+        # [bs, 1, enc_hidden_dim + emb_dim]
+
+        rnn_out , rnn_hidden = self.rnn(rnn_input,prev_hidden)
+        # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
+
         dec_out = self.fc_out(torch.cat((rnn_out,ctx_vector,qst_embeds), dim=2))
-        # [bs, 1, dec_output_dim]
+        #[bs, 1, dec_output_dim]
 
         return dec_out.squeeze(1), rnn_hidden
 
