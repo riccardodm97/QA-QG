@@ -209,7 +209,7 @@ class BilinearAttentionLayer(nn.Module):
         
         return scores
 
-class Attention(nn.Module):
+class BahdanauAttention(nn.Module):
 
     def __init__(self, dec_hidden_dim, enc_hidden_dim):
         super().__init__()
@@ -248,6 +248,38 @@ class Attention(nn.Module):
 
         return att_out
 
+class BaseAttention(nn.Module):
+
+    def __init__(self, dec_hidden_dim, enc_hidden_dim):
+        super().__init__()
+
+        self.attn = nn.Linear(enc_hidden_dim + dec_hidden_dim, dec_hidden_dim)  
+        self.v = nn.Linear(dec_hidden_dim, 1, bias=False)  
+
+    def forward(self, dec_state, enc_states, att_mask):
+
+        #enc_states = [bs, enc_len, enc_hidden_dim]
+        #prev_hidden = [bs, 1, dec_hidden_dim]
+        #att_mask = [bs, enc_len]
+
+        dec_state = dec_state.repeat(1,enc_states.shape[1],1)
+        # [bs, ctx_len, dec_hidden_dim]
+
+        combined = torch.cat((dec_state, enc_states), dim=2)
+        energy = torch.tanh(self.attn(combined))
+        # energy = [bs, ctx_len, dec_hid_dim]
+
+        attention = self.v(energy).squeeze(2)
+        attention = attention.masked_fill(att_mask == 0, float('-inf'))
+        # attention = [bs, ctx_len]
+
+        att_weights = F.softmax(attention, dim=1)
+        # [bs, ctx_len]
+
+        att_out = torch.bmm(att_weights.unsqueeze(1), enc_states)
+        # [bs, 1, enc_hidden_dim]
+        
+        return att_out
 
 class BaseEncoder(nn.Module):
 
@@ -329,7 +361,7 @@ class BaseDecoder(nn.Module):
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, False, device)
         self.emb_dim = self.emb_layer.embedding_dim
 
-        self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
+        self.attention = BaseAttention(dec_hidden_dim, enc_hidden_dim)
 
         self.rnn = nn.GRU(enc_hidden_dim+self.emb_dim, dec_hidden_dim, batch_first=True)
 
@@ -399,7 +431,7 @@ class BertDecoder(nn.Module):
         self.emb_layer = EmbeddingLayer(vectors, pad_idx, None, 0, False, device)        
         self.emb_dim = self.emb_layer.embedding_dim
 
-        self.attention = Attention(dec_hidden_dim, enc_hidden_dim)
+        self.attention = BahdanauAttention(dec_hidden_dim, enc_hidden_dim)
 
         self.rnn = nn.GRU(self.emb_dim, dec_hidden_dim, batch_first=True)
 

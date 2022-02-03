@@ -318,10 +318,8 @@ class QG_handler :
             DEC_HIDDEN = 512
             GRAD_CLIPPING = 1.0
             BATCH_SIZE = 64
-            LR = 0.05
-            DROPOUT = 0.5
-            WEIGHT_DECAY = 0.001
-            MOMENTUM = 0.9
+            LR = 0.001
+            DROPOUT = 0.3
             RANDOM_BATCH = False
             LR_SCHEDULER = False
 
@@ -332,10 +330,8 @@ class QG_handler :
             wandb.config.batch_size = BATCH_SIZE
             wandb.config.learning_rate = LR
             wandb.config.dropout = DROPOUT
-            wandb.config.weight_decay = WEIGHT_DECAY
             wandb.config.random_batch = RANDOM_BATCH
             wandb.config.lr_scheduler = LR_SCHEDULER
-            wandb.config.momentum = MOMENTUM
 
             pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
             vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
@@ -344,7 +340,7 @@ class QG_handler :
             
             self.model = models.BaselineQg(enc_embeddings,dec_embeddings,ENC_HIDDEN,DEC_HIDDEN,vocab_size,pad_idx,DROPOUT,device)
 
-            self.optimizer = optim.SGD(self.model.parameters(),lr=LR,momentum=MOMENTUM,weight_decay=WEIGHT_DECAY)
+            self.optimizer = optim.Adam(self.model.parameters(),lr=LR)
 
             self.run_param = {
                 'n_epochs' : N_EPOCHS,
