@@ -33,7 +33,7 @@ class QA_handler :
             LSTM_LAYER = 3
             DROPOUT = 0.3
             N_EPOCHS = 15
-            GRAD_CLIPPING = 10
+            GRAD_CLIPPING = 2.0
             BATCH_SIZE = 32
             LR = 0.002
             RANDOM_BATCH = False

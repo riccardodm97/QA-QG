@@ -163,7 +163,7 @@ class QuestionEncodingLayer(nn.Module):
     def linear_self_attention(self, qst_embed, qst_mask):
         
         scores = self.linear(qst_embed).squeeze(-1) 
-        #scores = [batch_size, qst_len]
+        # scores = [batch_size, qst_len]
 
         scores = scores.masked_fill(qst_mask == 0, float('-inf'))
 

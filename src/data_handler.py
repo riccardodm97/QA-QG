@@ -115,7 +115,7 @@ class DataManager:
         self.dataset = dataset
         self.device = device 
 
-        self._get_tokenizer() #construct the tokenizer for the current DataManager
+        self._get_tokenizer() #construct the tokenizer(s) for the current DataManager
 
         self.train_hf_dataset, self.val_hf_dataset = None, None
         if self.dataset.train_df is not None:
