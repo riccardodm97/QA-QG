@@ -24,7 +24,7 @@ QA_OBJECTS = {
 
 def get_model_params(model_name : str, dm : DataManager, device):
     if model_name == 'DrQA':
-        return {'hidden_dim':128,'num_layers':3,'dropout':0.3,'freeze_emb':False,'weight_matrix': dm.emb_model.vectors,'pad_idx':dm.vocab[globals.PAD_TOKEN],'device':device} 
+        return {'hidden_dim':128,'num_layers':3,'dropout':0.3,'freeze_emb':False,'weights_matrix': dm.emb_model.vectors,'pad_idx':dm.vocab[globals.PAD_TOKEN],'device':device} 
     elif model_name == 'BertQA':
         return {'device':device}
     elif model_name == 'ElectraQA':
