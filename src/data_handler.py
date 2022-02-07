@@ -27,6 +27,9 @@ import src.utils as utils
 logger = logging.getLogger(globals.LOG_NAME)
 
 class RawSquadDataset:
+    '''
+    Wraps the dataset and store the Pandas Dataframe , for both the train and test 
+    '''
 
     JSON_RECORD = ['data','paragraphs','qas','answers']
 
@@ -74,6 +77,7 @@ class RawSquadDataset:
 
         df = None
         
+        #differenciate between answers present or not present 
         answ = pd.json_normalize(json_file,self.JSON_RECORD[:-1]).answers
         if any(answ.apply(len)== 0) or answ.isnull().values.any():
             df = pd.json_normalize(json_file, self.JSON_RECORD[:-1],meta=[["data", "title"],['data','paragraph','context']])
@@ -109,6 +113,9 @@ class RawSquadDataset:
         return df 
 
 class DataManager: 
+    '''
+    Base class to handle the entire data pipeline and processing for every model. 
+    '''
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
@@ -157,7 +164,7 @@ class DataManager:
     
     def get_dataloader(self, split : str, batch_size : int, random : bool = False):
 
-        dataset = getattr(self,split+'_hf_dataset')
+        dataset = getattr(self,split+'_hf_dataset')      #retrive the correct split of the dataset
         assert dataset, f'No {split} dataset present'
 
         if random : 
@@ -169,6 +176,8 @@ class DataManager:
 
     
     def _build_hf_dataset(self, df : pd.DataFrame, has_answers : bool = True):  
+        
+        #build the HugginFace dataset and define the transformation to be applied to each batch when retrieved by the dataloaders 
 
         start_time = time.perf_counter()
         logger.info('building hf_dataset')
@@ -176,7 +185,7 @@ class DataManager:
         #encode dataframe as Huggingface dataset 
         hf_dataset = Dataset.from_pandas(df)
 
-        hf_dataset.set_transform(self._batch_transform(has_answers))
+        hf_dataset.set_transform(self._batch_transform(has_answers))    #the transformation is specific for each model / task 
 
         end_time = time.perf_counter()
         logger.info('elapsed time in building hf_dataset : %f',end_time-start_time)
@@ -190,16 +199,18 @@ class DataManager:
     
     def _batch_transform(self, has_answer) -> Callable:
 
+        #returns the transformation function to be applied on data of each batch on the fly 
+
         raise NotImplementedError()
 
 
 
-class RecurrentDataManager(DataManager):
+class RnnDataManagerQA(DataManager):
 
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
         start_time = time.perf_counter()
-        logger.info('init RecurrentDataManager')
+        logger.info('init RnnDataManagerQA')
 
         self.emb_model, self.vocab = utils.get_Glove_model_and_vocab()    #loading embedding model first since it's needed for the tokenizer 
         super().__init__(dataset,device)
@@ -211,7 +222,7 @@ class RecurrentDataManager(DataManager):
     def _get_tokenizer(self):
 
         tokenizer = Tokenizer(WordLevel(self.vocab,unk_token=globals.UNK_TOKEN))
-        tokenizer.normalizer = NormSequence([NFD(), StripAccents(), Lowercase(), Strip()]) #BertNormalizer() 
+        tokenizer.normalizer = NormSequence([NFD(), StripAccents(), Lowercase(), Strip()]) 
         tokenizer.pre_tokenizer = PreSequence([Whitespace(), Punctuation()])
         tokenizer.enable_padding(direction="right", pad_id=self.vocab[globals.PAD_TOKEN], pad_type_id=1, pad_token=globals.PAD_TOKEN)
 
@@ -263,7 +274,7 @@ class RecurrentDataManager(DataManager):
         return transform_with_answer if has_answer else transform_no_answer
 
 
-class TransformerDataManager(DataManager):
+class TransformerDataManagerQA(DataManager):
 
     VOCAB_PATH = os.path.join(globals.DATA_FOLDER,globals.BERT_PRETRAINED+'-vocab.txt')
 
@@ -285,7 +296,7 @@ class TransformerDataManager(DataManager):
 
         tokenizer = BertWordPieceTokenizer(self.VOCAB_PATH, lowercase=True)
         tokenizer.enable_padding(direction="right", pad_type_id=1)
-        tokenizer.enable_truncation(globals.BERT_MAX_TOKENS, strategy='only_second', stride = 25)
+        tokenizer.enable_truncation(globals.BERT_MAX_TOKENS, strategy='only_second', stride = 25)   #stride = overlap between chunks of the truncated passage (to avoid losing the answer)
 
         self.tokenizer = tokenizer
 
@@ -298,7 +309,8 @@ class TransformerDataManager(DataManager):
 
             starts = list(map(lambda x: x[0],batch['label_char']))
             ends = list(map(lambda x: x[1],batch['label_char']))
-
+            
+            #if some example has been truncated and the answer is not included in the first chunk, look for the chunk were it is present and substitute the passage with that one 
             not_replaced = []
             for i,e in enumerate(encodings) :
                 if e.char_to_token(starts[i],1) is None or e.char_to_token(ends[i]-1,1) is None :
@@ -362,6 +374,7 @@ class RnnDataManagerQG(DataManager):
 
         super().__init__(dataset, device)
 
+        #build embedding matrices per both the encoder and decoder 
         self.enc_vectors = utils.build_embedding_matrix('encoder',self.enc_tokenizer.get_vocab()) 
         self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab()) 
 
@@ -371,7 +384,7 @@ class RnnDataManagerQG(DataManager):
 
     def _get_tokenizer(self):
 
-        #post processor template 
+        #post processor template (adds special token to the text)
         processor = TemplateProcessing(
             single="[SOS] $A [EOS]",
             pair="[SOS] $A [EOS] [SOS]:1 $B:1 [EOS]:1",
@@ -450,6 +463,7 @@ class BertDataManagerQG(DataManager):
 
         super().__init__(dataset,device)
 
+        #only the decoder embedding matrix should be created
         self.dec_vectors = utils.build_embedding_matrix('decoder',self.dec_tokenizer.get_vocab()) 
 
         end_time = time.perf_counter()

@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 
-from src.data_handler import RawSquadDataset, DataManager, RecurrentDataManager, RnnDataManagerQG,  TransformerDataManager, BertDataManagerQG
+from src.data_handler import RawSquadDataset, DataManager, RnnDataManagerQA, RnnDataManagerQG,  TransformerDataManagerQA, BertDataManagerQG
 import src.model as models
 import  src.globals as globals
 import src.utils as utils 
@@ -27,7 +27,7 @@ class QA_handler :
 
         if model_name == 'DrQA' : 
 
-            self.data_manager : DataManager = RecurrentDataManager(squad_dataset, device)
+            self.data_manager : DataManager = RnnDataManagerQA(squad_dataset, device)
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
@@ -67,7 +67,7 @@ class QA_handler :
         
         elif model_name == 'Bert' :
             
-            self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
+            self.data_manager : DataManager = TransformerDataManagerQA(squad_dataset, device)
 
             N_EPOCHS = 3
             BATCH_SIZE = 8
@@ -104,7 +104,7 @@ class QA_handler :
 
         elif model_name == 'Electra' :
             
-            self.data_manager : DataManager = TransformerDataManager(squad_dataset, device)
+            self.data_manager : DataManager = TransformerDataManagerQA(squad_dataset, device)
 
             N_EPOCHS = 3
             BATCH_SIZE = 8
@@ -355,7 +355,7 @@ class QG_handler :
             N_EPOCHS = 15
             ENC_HIDDEN = 256
             DEC_HIDDEN = 256
-            GRAD_CLIPPING = 10
+            GRAD_CLIPPING = 1.0
             BATCH_SIZE = 64
             LR = 0.001
             EPS = 1e-08

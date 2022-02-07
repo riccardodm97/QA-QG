@@ -7,7 +7,7 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 
-from src.data_handler import RawSquadDataset, DataManager, TransformerDataManager, RecurrentDataManager
+from src.data_handler import RawSquadDataset, DataManager, TransformerDataManagerQA, RnnDataManagerQA
 import src.utils as utils 
 import src.model as models
 import src.globals as globals
@@ -17,9 +17,9 @@ logger = logging.getLogger(globals.LOG_NAME)
 Container = namedtuple('Container', ['model','datamanager'])
 
 QA_OBJECTS = {
-    'DrQA': Container(models.DrQA, RecurrentDataManager),
-    'BertQA': Container(models.BertQA, TransformerDataManager),
-    'ElectraQA': Container(models.ElectraQA, TransformerDataManager)   
+    'DrQA': Container(models.DrQA, RnnDataManagerQA),
+    'BertQA': Container(models.BertQA, TransformerDataManagerQA),
+    'ElectraQA': Container(models.ElectraQA, TransformerDataManagerQA)   
 }
 
 def get_model_params(model_name : str, dm : DataManager, device):

@@ -46,6 +46,7 @@ def f1_score(precision, recall):
 
 def accuracy_precision_recall_text(true, pred):
     
+    #transform string phrase in list of tokens 
     true_tokens = get_tokens(true)
     pred_tokens = get_tokens(pred)
 
@@ -73,13 +74,13 @@ def qa_evaluate(data : dict) -> dict:
     metrics = defaultdict(list)
 
     Record = namedtuple('Record', data.keys())
-    data_records = [Record(*t) for t in zip(*(data.values()))]    #each element of the list is an example in 
+    data_records = [Record(*t) for t in zip(*(data.values()))]    #each element of the list is an example of the batch with all the relative fields 
 
     for ex in data_records:
         pred_start_char = ex.offsets[ex.pred_start][0]
         pred_end_char = ex.offsets[ex.pred_end][1]
 
-        pred_text : str = ex.context[pred_start_char:pred_end_char] 
+        pred_text : str = ex.context[pred_start_char:pred_end_char]   #get the text at the predicted span inside the context
 
         acc, prec, rec = accuracy_precision_recall_text(ex.answer, pred_text)
         f1 = f1_score(prec, rec)
@@ -91,7 +92,7 @@ def qa_evaluate(data : dict) -> dict:
         metrics["f1"].append(f1)
         metrics["em"].append(em)
     
-    average_metrics = {k: np.mean(v) for k, v in metrics.items()}
+    average_metrics = {k: np.mean(v) for k, v in metrics.items()}   #take the mean of all list of values in the dictionary
     
     start_dist = torch.abs(data['pred_start'].float() - data['true_start'].float()).mean()
     end_dist = torch.abs(data['pred_end'].float() - data['true_end'].float()).mean()
@@ -121,14 +122,14 @@ def qg_evaluate(pred, true, mask, tokenizer : Tokenizer) -> dict:
       f1 = f1_score(prec, rec)
 
       if len(get_tokens(p)) != 0 :
-        m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]], max_order=2, smooth=True)
+        m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]], smooth=True)
         bleu = m['bleu']
       else : bleu = 0.0
 
       metrics["f1"].append(f1)
       metrics["bleu"].append(bleu)
     
-    average_metrics = {k: np.mean(v) for k, v in metrics.items()}
+    average_metrics = {k: np.mean(v) for k, v in metrics.items()}   #take the mean of all list of values in the dictionary
 
     num_acc = pred.eq(true).masked_select(mask.bool()).float().mean().item()
 
