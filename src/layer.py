@@ -564,11 +564,11 @@ class RefNetEncoder(nn.Module):
         answ_last = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) 
         # [bs, enc_hidden_dim*2]
 
-        answ_last = answ_last.unsqueeze(1).repeat(1,ctx_outputs.shape[1],1)
-        b = torch.cat((ctx_outputs,answ_last,torch.mul(ctx_outputs,answ_last)),dim=2)
+        answ_last_rep = answ_last.unsqueeze(1).repeat(1,ctx_outputs.shape[1],1)
+        c = torch.cat((ctx_outputs,answ_last_rep,torch.mul(ctx_outputs,answ_last_rep)),dim=2)
         # [bs, ctx_len, enc_hidden_dim*6]
 
-        fused = torch.tanh(self.fusion(b))
+        fused = torch.tanh(self.fusion(c))
         # [bs, ctx_len, enc_hidden_dim*2]
 
         hidden = self.to_dec(torch.cat((ctx_hidden[-2,:,:],ctx_hidden[-1,:,:], answ_last), dim=1)).unsqueeze(0)
