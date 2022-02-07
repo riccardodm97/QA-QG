@@ -237,7 +237,7 @@ class BahdanauAttention(nn.Module):
         # [bs, 1, dec_hidden_dim]
         
         att = torch.bmm(v,energy).squeeze(1)
-        att = att.masked_fill(att_mask == 0, float('-inf'))  #avoid paying attention to pad or special tokens 
+        #att = att.masked_fill(att_mask == 0, float('-inf'))  #avoid paying attention to pad or special tokens 
         # [bs, enc_len]
 
         att_weights = F.softmax(att, dim=1)
