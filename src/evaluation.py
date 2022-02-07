@@ -121,7 +121,7 @@ def qg_evaluate(pred, true, mask, tokenizer : Tokenizer) -> dict:
       f1 = f1_score(prec, rec)
 
       if len(get_tokens(p)) != 0 :
-        m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]])
+        m = metric.compute(predictions=[get_tokens(p)],references=[[get_tokens(t)]], max_order=2, smooth=True)
         bleu = m['bleu']
       else : bleu = 0.0
 
