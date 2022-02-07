@@ -354,13 +354,13 @@ class QG_handler :
             self.data_manager : DataManager = RnnDataManagerQG(squad_dataset, device)
 
             N_EPOCHS = 15
-            ENC_HIDDEN = 256
-            DEC_HIDDEN = 256
+            ENC_HIDDEN = 512
+            DEC_HIDDEN = 512
             GRAD_CLIPPING = 1.0
             BATCH_SIZE = 64
             LR = 0.001
             EPS = 1e-08
-            DROPOUT = 0.5
+            DROPOUT = 0.3
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             LR_SCHEDULER = False
