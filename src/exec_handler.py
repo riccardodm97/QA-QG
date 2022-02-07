@@ -23,7 +23,7 @@ class QA_handler :
      
     def __init__(self, model_name, dataset_path, device):
     
-        squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)
+        squad_dataset = RawSquadDataset(train_dataset_path = dataset_path)  # load and wrap dataset 
 
         if model_name == 'DrQA' : 
 
