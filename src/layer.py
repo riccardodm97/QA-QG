@@ -267,14 +267,14 @@ class BaseAttention(nn.Module):
 
         combined = torch.cat((dec_state, enc_states), dim=2)
         energy = torch.tanh(self.attn(combined))
-        # energy = [bs, ctx_len, dec_hid_dim]
+        # energy = [bs, enc_len, dec_hid_dim]
 
         attention = self.v(energy).squeeze(2)
         attention = attention.masked_fill(att_mask == 0, float('-inf'))  
-        # attention = [bs, ctx_len]
+        # attention = [bs, enc_len]
 
         att_weights = F.softmax(attention, dim=1)
-        # [bs, ctx_len]
+        # [bs, enc_len]
 
         att_out = torch.bmm(att_weights.unsqueeze(1), enc_states)
         # [bs, 1, enc_hidden_dim]
@@ -336,7 +336,7 @@ class BaseEncoder(nn.Module):
 
         packed_answ = pack_padded_sequence(answ_embeds, answ_lengths.cpu(), batch_first=True, enforce_sorted=False)
         answ_outputs, answ_hidden = self.answ_rnn(packed_answ)
-        answ_outputs = pad_packed_sequence(answ_outputs, batch_first=True) 
+        answ_outputs, _ = pad_packed_sequence(answ_outputs, batch_first=True) 
         # [bs, anw_len, enc_hidden_dim*2]
 
         answ_reduced = torch.cat((answ_hidden[-2,:,:],answ_hidden[-1,:,:]), dim=1) # [bs, enc_hidden_dim*2]
@@ -348,7 +348,7 @@ class BaseEncoder(nn.Module):
         ctx_answ_fusion = torch.add(projected_answ,ctx_reduced)
         # [bs, enc_hidden_dim*2]
 
-        hidden = self.fusion(ctx_answ_fusion).unsqueeze(0)
+        hidden = torch.tanh(self.fusion(ctx_answ_fusion).unsqueeze(0))
         # [1, bs, dec_hidden_dim]
 
         return ctx_outputs, hidden
