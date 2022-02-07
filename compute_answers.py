@@ -24,7 +24,7 @@ QA_OBJECTS = {
 
 def get_model_params(model_name : str, dm : DataManager, device):
     if model_name == 'DrQA':
-        return {'hidden_dim':128,'num_layers':3,'dropout':0.3,'freeze_emb':False,'weights_matrix': dm.emb_model.vectors,'pad_idx':dm.vocab[globals.PAD_TOKEN],'device':device} 
+        return {'hidden_dim':128,'num_layers':3,'dropout':0.3,'freeze_emb':False,'weights_matrix':dm.emb_model.vectors,'pad_idx':dm.vocab[globals.PAD_TOKEN],'device':device} 
     elif model_name == 'BertQA':
         return {'device':device}
     elif model_name == 'ElectraQA':
@@ -76,7 +76,7 @@ def main(dataset_path: str, model_name : str):
 
     logger.info('starting evaluation pipeline')
 
-    d = QA_OBJECTS[model_name].datamanager    
+    d = QA_OBJECTS[model_name].datamanager     #datamanager based on model type
     m = QA_OBJECTS[model_name].model
 
     test_dataset = RawSquadDataset(test_dataset_path = dataset_path)
@@ -88,11 +88,11 @@ def main(dataset_path: str, model_name : str):
     model_param = get_model_params(model_name, data_manager, device)
 
     logger.info('loading the model')
-    best_model = m(**model_param)    
-    best_model.load_state_dict(torch.load(f'models/{model_name}.pt', map_location=device))
+    eval_model = m(**model_param)    
+    eval_model.load_state_dict(torch.load(f'models/{model_name}.pt', map_location=device))
 
     logger.info('runnning evaluation script on dataset')
-    generate_predictions(best_model, test_dataloader)
+    generate_predictions(eval_model, test_dataloader)
 
 
 

@@ -11,11 +11,11 @@ PAD_TOKEN = '[PAD]'   #pad token string key
 SOS_TOKEN = '[SOS]'   #start of sequence token string key
 EOS_TOKEN = '[EOS]'   #end of sequence token string key
 
-TRAIN_VAL_SPLIT = 80         # percentage of train examples 
+TRAIN_VAL_SPLIT = 80         #percentage of train examples 
 
 RND_SEED = 42 
 
-BERT_MAX_TOKENS = 512
+BERT_MAX_TOKENS = 512      #num max tokens accepted by bert 
 
 BERT_PRETRAINED = 'bert-base-uncased'
 ELECTRA_PRETRAINED = 'google/electra-base-discriminator'

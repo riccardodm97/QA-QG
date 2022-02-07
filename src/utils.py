@@ -41,7 +41,7 @@ def load_glove_embedding():
 
 def get_Glove_model_and_vocab():
     """
-    Loads a pre-trained word embedding model via gensim library
+    Retrive GloVe embedding model, adds special tokens to the vocab and returns it 
 
     """
     glove_model_path = os.path.join(globals.DATA_FOLDER, f"glove_vectors_{globals.EMBEDDING_DIMENSION}.txt")
@@ -77,6 +77,9 @@ def get_Glove_model_and_vocab():
 
 
 def build_embedding_matrix(type : str, vocab : dict) -> np.ndarray:
+    '''
+    Builds an embedding matrix from GloVe vectors given an already defined vocabulary 
+    '''
 
     assert type in ['encoder','decoder']
     emb_matrix_path = os.path.join(globals.DATA_FOLDER, f"{type}_emb_matrix.npy")
@@ -86,7 +89,7 @@ def build_embedding_matrix(type : str, vocab : dict) -> np.ndarray:
         embedding_matrix = np.load(emb_matrix_path,allow_pickle=True)
     
     else : 
-        logger.info(f'Building {type} embedding matrix...')
+        logger.info(f'building {type} embedding matrix...')
 
         emb_model = load_glove_embedding()
         assert emb_model is not None, 'WARNING: empty embeddings model'
@@ -130,6 +133,9 @@ def load_bert_vocab():
 
 
 def set_random_seed():
+    '''
+    Set the random seed for the entire environment 
+    '''
 
     torch.manual_seed(globals.RND_SEED)
     random.seed(globals.RND_SEED)
@@ -164,11 +170,16 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu") 
 
 def get_run_id():
-
+    '''
+    Create a run id based on current date and time for wandb logging puroposes 
+    '''
     return datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
 
  
-def compute_qa_predictions(starts,ends):    
+def compute_qa_predictions(starts,ends):   
+    '''
+    Generates single numerical predictions from raw distribution coming from the model output 
+    ''' 
     
     _, len_txt = starts.size()
 
@@ -199,6 +210,9 @@ def compute_qg_predictions(raw_pred):
 
 
 def build_avg_dict(mode : str, metrics : dict) -> dict :
+    '''
+    Construct a dictionary which average down all the lists to a single value and adds to the keys the name of the mode (train-val) for logging purposes
+    '''
 
     def prepend_mode(key : str):
         return mode + '/' + key
@@ -212,6 +226,9 @@ def build_avg_dict(mode : str, metrics : dict) -> dict :
 
 
 def remove_errors(df : pd.DataFrame):
+    '''
+    Remove uncorrect rows from the passed dataframe and returns the cleaned one
+    '''
 
     error_ids = open(os.path.join(globals.DATA_FOLDER,'error_ids.txt')).read().splitlines()
     

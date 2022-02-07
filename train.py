@@ -57,4 +57,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args.task,args.model,args.dataset,args.log)
-    #main('qg', 'BaseQG', 'training_set.json', False)

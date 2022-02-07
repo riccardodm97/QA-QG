@@ -281,7 +281,7 @@ class TransformerDataManagerQA(DataManager):
     def __init__(self, dataset : RawSquadDataset, device = 'cpu'):
 
         start_time = time.perf_counter()
-        logger.info('init TransformerDataManager')
+        logger.info('init TransformerDataManagerQA')
 
         super().__init__(dataset,device)
 

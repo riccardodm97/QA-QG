@@ -498,7 +498,9 @@ class RefNetEncoder(nn.Module):
 
     
     def augment_embeddings(self,embeddings,answ_start,answ_end):
-
+        ''' 
+        Add a binary feature to the embeddings of the passage which express wheter or not a word is also part of the answer 
+        '''
         t1 = torch.le(answ_start.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()   
         t2 = torch.ge(answ_end.unsqueeze(-1),torch.arange(embeddings.shape[1],device=self.device)).float()
         m = torch.mul(t1,t2).unsqueeze(-1)
@@ -507,6 +509,9 @@ class RefNetEncoder(nn.Module):
         return augmented_emb
     
     def ctx2answ(self,answ_embeds,ctx_out,answ_start,answ_end):
+        '''
+        Retrive the encoded ctx_tokens which belong to the answer span in the context 
+        '''
         
         index = torch.vstack(list(pad_sequence([torch.arange(s,e+1) for s,e in zip(answ_start,answ_end)], batch_first=True)))
 

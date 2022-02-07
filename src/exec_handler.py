@@ -27,7 +27,7 @@ class QA_handler :
 
         if model_name == 'DrQA' : 
 
-            self.data_manager : DataManager = RnnDataManagerQA(squad_dataset, device)
+            self.data_manager : DataManager = RnnDataManagerQA(squad_dataset, device)   #let the datamanager manage all the data pipeline 
 
             HIDDEN_DIM = 128
             LSTM_LAYER = 3
@@ -163,9 +163,9 @@ class QA_handler :
             self.model.zero_grad(set_to_none=True)
             self.optimizer.zero_grad()        
 
-            pred_start_raw, pred_end_raw = self.model(batch)
+            pred_start_raw, pred_end_raw = self.model(batch)  #get predictions 
 
-            true_start, true_end = batch['label_token_start'], batch['label_token_end']
+            true_start, true_end = batch['label_token_start'], batch['label_token_end']   #get ground truth 
 
             start_loss = self.criterion(pred_start_raw,true_start) 
             end_loss = self.criterion(pred_end_raw,true_end)
@@ -208,7 +208,7 @@ class QA_handler :
         end_time = time.perf_counter()
         metrics['epoch_time'] = end_time-start_time
 
-        return utils.build_avg_dict('train',metrics)
+        return utils.build_avg_dict('train',metrics)  #build dictionary suited for logging 
 
     
     def val_loop(self, iterator):
@@ -291,7 +291,8 @@ class QA_handler :
             metrics['epoch'] = epoch+1 
 
             wandb.log(metrics)
-        
+            
+            # save the best model 
             if val_metrics['val/f1'] >= best_val_f1:
 
                 best_val_f1 = val_metrics['val/f1']
