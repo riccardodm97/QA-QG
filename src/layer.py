@@ -426,8 +426,8 @@ class BertEncoder(nn.Module):
         outputs = self.dropout(bert_outputs[0])
         # [bs, len_txt, bert_hidden_dim]
 
-        dec_hidden = torch.zeros(ids.shape[0], self.bert.config.hidden_size, device=self.device).unsqueeze(0)
-        # dec_hidden = bert_outputs[1].unsqueeze(0)
+        #dec_hidden = torch.zeros(ids.shape[0], self.bert.config.hidden_size, device=self.device).unsqueeze(0)
+        dec_hidden = bert_outputs[1].unsqueeze(0)
         # [1, bs, dec_hidden_dim]
 
         return outputs, dec_hidden

@@ -408,7 +408,7 @@ class QG_handler :
             RANDOM_BATCH = False
             LR_SCHEDULER = True
             WARMUP = 0
-            FREEZE_ENC = True
+            FREEZE_ENC = False
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
