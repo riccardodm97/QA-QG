@@ -399,11 +399,17 @@ class BaseDecoder(nn.Module):
 
 class BertEncoder(nn.Module):
 
-    def __init__(self, dropout = 0.1) :     
+    def __init__(self, dropout, freeze_enc, device) :     
         super().__init__()
+
+        self.device = device
 
         self.bert = BertModel.from_pretrained(globals.BERT_PRETRAINED)
         self.dropout = nn.Dropout(dropout)
+
+        if freeze_enc : 
+            for param in self.bert.parameters():
+                param.requires_grad = False
     
     def get_hidden_dim(self):
 
@@ -420,7 +426,11 @@ class BertEncoder(nn.Module):
         outputs = self.dropout(bert_outputs[0])
         # [bs, len_txt, bert_hidden_dim]
 
-        return outputs, bert_outputs[1].unsqueeze(0)
+        dec_hidden = torch.zeros(ids.shape[0], self.bert.config.hidden_size, device=self.device).unsqueeze(0)
+        # dec_hidden = bert_outputs[1].unsqueeze(0)
+        # [1, bs, dec_hidden_dim]
+
+        return outputs, dec_hidden
 
 
 class BertDecoder(nn.Module):
@@ -453,7 +463,7 @@ class BertDecoder(nn.Module):
         qst_embeds = self.emb_layer(input)
         # [bs, 1, emb_dim]
 
-        rnn_out , rnn_hidden = self.rnn(qst_embeds,prev_hidden)
+        rnn_out , rnn_hidden = self.rnn(qst_embeds, prev_hidden)
         # rnn_out = [bs, 1, dec_hidden_dim], rnn_hidden = [1, bs, dec_hidden_dim]
 
         ctx_vector = self.attention(rnn_out, enc_outputs, enc_mask)   

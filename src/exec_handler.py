@@ -406,7 +406,8 @@ class QG_handler :
             WEIGHT_DECAY = 0.01
             RANDOM_BATCH = False
             LR_SCHEDULER = True
-            WARMUP = 2000
+            WARMUP = 0
+            FREEZE_ENC = True
 
             #log model configuration   
             wandb.config.n_epochs = N_EPOCHS
@@ -420,14 +421,14 @@ class QG_handler :
             wandb.config.dec_hidden = DEC_HIDDEN
             wandb.config.lr_scheduler = LR_SCHEDULER
             wandb.config.warmup = WARMUP
-
+            wandb.config.freeze_enc = FREEZE_ENC
 
             pad_idx = self.data_manager.dec_tokenizer.token_to_id(globals.PAD_TOKEN)
             vocab_size = self.data_manager.dec_tokenizer.get_vocab_size()
             dec_embeddings = self.data_manager.dec_vectors
 
 
-            self.model = models.BertQG(dec_embeddings, DEC_HIDDEN, vocab_size, pad_idx, DROPOUT, device)
+            self.model = models.BertQG(dec_embeddings, DEC_HIDDEN, vocab_size, FREEZE_ENC, pad_idx, DROPOUT, device)
 
             self.optimizer = AdamW(self.model.parameters(), lr=LR, eps=EPS, weight_decay=WEIGHT_DECAY)
 

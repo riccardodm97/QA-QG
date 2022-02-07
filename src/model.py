@@ -209,11 +209,11 @@ class Seq2Seq(nn.Module):
 
         input = qst_ids[:,0]    
 
-        for word_idx in range(1,trg_len):
+        for word_idx in range(1, trg_len):
 
             dec_out, hidden = self.decoder(input, hidden, enc_outputs, mask)
 
-            outputs[:,word_idx,:] = dec_out
+            outputs[:,word_idx] = dec_out
 
             teacher_force = random.random() < teacher_force_ratio 
 
@@ -244,11 +244,11 @@ class BaselineQg(Seq2Seq):
 
 class BertQG(Seq2Seq):
 
-    def __init__(self, dec_vectors, dec_hidden_dim, output_dim, pad_idx, dropout, device) :
+    def __init__(self, dec_vectors, dec_hidden_dim, output_dim, freeze_enc, pad_idx, dropout, device) :
 
         super().__init__(output_dim, device)
 
-        self.encoder = layer.BertEncoder(dropout)
+        self.encoder = layer.BertEncoder(dropout, freeze_enc, device)
         self.decoder = layer.BertDecoder(dec_vectors, self.encoder.get_hidden_dim(), dec_hidden_dim, output_dim, pad_idx, dropout, device)
 
         self.to(self.device)
