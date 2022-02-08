@@ -28,14 +28,17 @@ All the information, details and results regarding this project can be found in 
 The following packages are needed to be able to run the code:
 
 ```
+- python == 3.9 
 - numpy 
-- pandas == 1.3.5
-- pyarrow == 6.0.0
-- gensim == 4.0.1
-- torch == 1.10.1
-- datasets == 1.17.0
-- transformers == 4.15.0
+- pandas == 1.3.5 
+- pyarrow == 6.0.0 
+- gensim == 4.0.1 
+- torch == 1.10.1 
+- datasets == 1.17.0 
+- transformers == 4.15.0 
+- matplotlib 
 ```
+
 ### Train
 To train the models on the dataset present in the 'data' folder, run the following script : 
 
