@@ -8,7 +8,7 @@ We made use of the Stanford Question Answering Dataset (SQuAD) v1.1, for both pr
 
 To tackled these tasks we developed and implemented multiple neural architectures and took advantage of the two most popular ones in the NLP field: Recurrent Neural Networks (RNN) and Transformers.
 
-All the information, details and results regarding this project can be found in the [report](report.pdf)
+All the information, details and results regarding this project can be found in the [report](report.pdf).
 
 ### QA example 
 
