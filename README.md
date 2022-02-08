@@ -8,6 +8,8 @@ We made use of the Stanford Question Answering Dataset (SQuAD) v1.1, for both pr
 
 To tackled these tasks we developed and implemented multiple neural architectures and took advantage of the two most popular ones in the NLP field: Recurrent Neural Networks (RNN) and Transformers.
 
+All the information, details and results regarding this project can be found in the [report](report.pdf)
+
 ### QA example 
 
 > <b>Context</b> : Canadian football has 12 players on the field per team rather than 11; the field is roughly 10 yards wider, and 10 yards longer between end-zones that are themselves 10 yards deeper; and a team has only three downs to gain 10 yards, which results in less offensive rushing than in the American game. In the Canadian game all players on the defending team, when a down begins, must be at least 1 yard from the line of scrimmage. 
