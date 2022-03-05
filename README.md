@@ -2,7 +2,7 @@
 
 Question Answering (QA) and Question Generation (QG) are two Natural Language Processing (NLP) and machine comprehension (MC) tasks, which have gained popularity over the past few years. They are fascinating yet challenging problems that have an instrinsic connection and can be regarded as dual tasks. 
 
-The focus of QA task is to build a system which is capable to automatically produce an answer given a question relative to passage of text provided in a natural language form. The QG problem on the other hand aims at at generating questions given a specific answer related to a text passage. Both this tasks are clearly tough for machines, requiring both understanding of natural language and ability to contextualize.
+The focus of QA task is to build a system which is capable of automatically producing an answer given a question relative to passage of text provided in a natural language form. The QG problem on the other hand aims at at generating questions given a specific answer related to a text passage. Both this tasks are clearly tough for machines, requiring both understanding of natural language and ability to contextualize.
 
 We made use of the Stanford Question Answering Dataset (SQuAD) v1.1, for both problems. SQuAD is a reading comprehension dataset made up of 100,000+ questions on 500+ articles posed by crowd workers on a collection of Wikipedia articles, where the answer to each question is a text segment, or span, from the relevant reading passage.
 
